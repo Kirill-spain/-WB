@@ -1,0 +1,45 @@
+name: WB sync
+
+# Тянет данные Wildberries в data.json и коммитит их в репозиторий.
+# Запускается по расписанию и вручную (кнопка Run workflow).
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"      # каждые 6 часов (время UTC)
+  workflow_dispatch: {}         # ручной запуск из вкладки Actions
+
+permissions:
+  contents: write               # нужно, чтобы коммитить обновлённый data.json
+
+concurrency:
+  group: wb-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Pull Wildberries data
+        env:
+          WB_STATS_TOKEN: ${{ secrets.WB_STATS_TOKEN }}
+        run: python wb_sync.py
+
+      - name: Commit data.json (если изменился)
+        run: |
+          git config user.name  "bioboro-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if git diff --quiet -- data.json; then
+            echo "Изменений в data.json нет — коммит не нужен."
+          else
+            git add data.json
+            git commit -m "WB sync: обновление data.json [skip ci]"
+            git push
+          fi
