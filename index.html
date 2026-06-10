@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BIOBORO · Трекер выполнения плана</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+
+    <!-- Шапка -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__mark">B</div>
+        <div>
+          <div class="brand__name">BIOBORO</div>
+          <div class="brand__sub">Трекер выполнения плана</div>
+        </div>
+      </div>
+      <div class="filters">
+        <div class="field"><span class="field__label">Месяц</span><select id="f-month" class="select"></select></div>
+        <div class="field"><span class="field__label">Канал</span><select id="f-channel" class="select"></select></div>
+        <div class="field"><span class="field__label">Метрика</span><select id="f-metric" class="select"></select></div>
+        <div class="field field--date"><span class="field__label">Сегодня (точка отсчёта)</span><input type="date" id="today-input" class="today-input"></div>
+      </div>
+    </header>
+
+    <!-- Баннер-вердикт -->
+    <section id="verdict" class="verdict">
+      <div class="verdict__main">
+        <div id="verdict-arrow" class="verdict__icon">↑</div>
+        <div>
+          <div id="verdict-status" class="verdict__status">—</div>
+          <div id="verdict-detail" class="verdict__detail">—</div>
+        </div>
+      </div>
+      <div class="verdict__numbers">
+        <div><div class="vnum__label">Выполнение плана к дате</div><div id="v-completion" class="vnum__value">—</div></div>
+        <div><div class="vnum__label">Нужно добрать прямо сейчас</div><div id="v-catchup" class="vnum__value">—</div></div>
+        <div><div class="vnum__label">Нужный темп до конца месяца</div><div id="v-runrate" class="vnum__value">—</div></div>
+      </div>
+    </section>
+
+    <!-- Редактор плана на месяц -->
+    <section class="card plan-card">
+      <div class="plan-head">
+        <div>
+          <div class="card__title">План на месяц — <span id="plan-month">—</span></div>
+          <div class="card__sub">Обычно ставят чистую выручку в деньгах. Изменения применяются сразу и сохраняются в браузере.</div>
+        </div>
+        <button id="plan-reset" class="btn-ghost" type="button">Сбросить к data.json</button>
+      </div>
+      <div id="plan-cells" class="plan-grid"></div>
+    </section>
+
+    <!-- KPI -->
+    <h2 class="section-title">Ключевые показатели <span id="kpi-scope" class="muted-inline"></span></h2>
+    <section id="kpi-grid" class="kpi-grid"></section>
+
+    <!-- Прогресс месяца -->
+    <section class="card progress-card">
+      <div class="progress-head">
+        <div>
+          <div class="card__title">Прогресс месяца</div>
+          <div id="progress-sub" class="card__sub">—</div>
+        </div>
+        <div id="progress-pct" class="progress-pct">—</div>
+      </div>
+      <div class="bar">
+        <div id="bar-fill" class="bar__fill"></div>
+        <div id="bar-plan" class="bar__plan"></div>
+      </div>
+      <div class="bar-legend">
+        <span><span class="dot dot--fill"></span>Факт (накопит.)</span>
+        <span><span class="dot dot--plan"></span>План к сегодняшнему дню</span>
+        <span><span class="dot dot--end"></span>100% месяца — правый край</span>
+      </div>
+    </section>
+
+    <!-- Графики -->
+    <section class="charts">
+      <div class="card">
+        <div class="card__title">Накопительно: план vs факт</div>
+        <div id="chart1-sub" class="card__sub">—</div>
+        <div class="chart-wrap"><canvas id="chart-cumulative"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card__title">Каналы: текущий период vs прошлый месяц</div>
+        <div class="card__sub">Красным — каналы, просевшие к прошлому месяцу</div>
+        <div class="chart-wrap"><canvas id="chart-channels"></canvas></div>
+      </div>
+    </section>
+
+    <!-- Блоки период -->
+    <section class="blocks">
+      <div id="block-today" class="card">
+        <div class="block__head"><span class="block__tag">Сегодня</span><span id="today-date" class="block__date">—</span></div>
+        <div class="block__body"></div>
+      </div>
+      <div id="block-week" class="card">
+        <div class="block__head"><span class="block__tag">Неделя</span><span id="week-range" class="block__date">—</span></div>
+        <div class="block__body"></div>
+      </div>
+      <div id="block-month" class="card">
+        <div class="block__head"><span class="block__tag">Месяц</span><span id="month-name" class="block__date">—</span></div>
+        <div class="block__body"></div>
+      </div>
+    </section>
+
+    <!-- Структура расходов и прибыли -->
+    <section class="card cost-card">
+      <div class="card__title">Структура расходов и прибыли</div>
+      <div id="cost-sub" class="card__sub">—</div>
+      <div id="cost-body"></div>
+    </section>
+
+    <!-- Сравнение с прошлым месяцем -->
+    <section class="card compare-card">
+      <div class="card__title">Сравнение с прошлым месяцем <span id="compare-scope" class="muted-inline"></span></div>
+      <div id="compare-sub" class="card__sub">—</div>
+      <div id="compare-grid" class="compare-grid"></div>
+    </section>
+
+    <!-- Таблица по дням -->
+    <section class="card table-card">
+      <div class="card__title">Динамика по дням</div>
+      <div class="card__sub">Зелёным — дни с опережением плана, красным — с отставанием</div>
+      <div class="table-scroll">
+        <table id="day-table" class="day-table">
+          <thead><tr>
+            <th>День</th>
+            <th class="num">План/день</th>
+            <th class="num">Факт/день</th>
+            <th class="num">План накопит.</th>
+            <th class="num">Факт накопит.</th>
+            <th class="num">Δ накопит.</th>
+            <th class="num">% плана</th>
+            <th>Статус</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="foot">Данные: <code>data.json</code> · MVP · BIOBORO · переключение источника — в <code>app.js → SOURCE</code> (см. README)</p>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

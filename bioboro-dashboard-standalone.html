@@ -1,0 +1,4839 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BIOBORO · Трекер выполнения плана</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+/* ============================================================
+   BIOBORO — трекер плана. Светлая «клиническая/bio» тема.
+   ============================================================ */
+:root {
+  --bg:        #F4F7F5;
+  --surface:   #FFFFFF;
+  --surface-2: #F7FAF8;
+  --ink:       #0E1B17;
+  --muted:     #5C6B66;
+  --faint:     #8A9893;
+  --line:      #E4ECE8;
+  --brand:     #0FA968;
+  --brand-d:   #0A7A4B;
+  --brand-l:   #14C29A;
+  --pos:       #16A34A;
+  --pos-bg:    #E7F6EC;
+  --neg:       #DC2626;
+  --neg-bg:    #FCEBEB;
+  --shadow:    0 1px 2px rgba(14,27,23,.04), 0 8px 24px rgba(14,27,23,.05);
+  --radius:    16px;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased;
+}
+.app { max-width: 1240px; margin: 0 auto; padding: 22px clamp(14px, 3vw, 30px) 60px; }
+
+.num, .kpi__value, .vnum__value, .verdict__status, .progress-pct,
+.day-table td.num, .stat__value, .cmp__now { font-variant-numeric: tabular-nums; }
+
+h2.section-title {
+  font: 600 13px/1 'Inter', sans-serif; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--faint); margin: 26px 4px 12px;
+}
+.muted-inline { color: var(--faint); font-weight: 500; text-transform: none; letter-spacing: 0; }
+
+/* ---------- Шапка ---------- */
+.topbar { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; padding-bottom: 18px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand__mark {
+  width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-l) 100%);
+  color: #fff; font: 700 22px 'Space Grotesk', sans-serif; box-shadow: 0 6px 16px rgba(15,169,104,.32);
+}
+.brand__name { font: 700 20px/1 'Space Grotesk', sans-serif; letter-spacing: .14em; }
+.brand__sub  { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field__label { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; padding-left: 2px; }
+.select {
+  appearance: none;
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235C6B66' d='M6 8 0 0h12z'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 32px 9px 12px;
+  font: 500 14px 'Inter', sans-serif; color: var(--ink); cursor: pointer; min-width: 150px;
+}
+.select:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+.field--date .today { font: 600 14px 'Space Grotesk', sans-serif; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
+
+/* ---------- Баннер-вердикт ---------- */
+.verdict {
+  display: flex; flex-wrap: wrap; gap: 22px; justify-content: space-between;
+  border-radius: var(--radius); padding: 22px 24px; background: var(--surface);
+  border: 1px solid var(--line); box-shadow: var(--shadow); position: relative; overflow: hidden;
+}
+.verdict::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 6px; background: var(--brand); }
+.verdict--ahead::before  { background: var(--pos); }
+.verdict--behind::before { background: var(--neg); }
+.verdict__main { display: flex; align-items: center; gap: 18px; min-width: 260px; }
+.verdict__icon { width: 56px; height: 56px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 26px; font-weight: 700; }
+.verdict--ahead  .verdict__icon { background: var(--pos-bg); color: var(--pos); }
+.verdict--behind .verdict__icon { background: var(--neg-bg); color: var(--neg); }
+.verdict__status { font: 700 26px/1.1 'Space Grotesk', sans-serif; }
+.verdict--ahead  .verdict__status { color: var(--pos); }
+.verdict--behind .verdict__status { color: var(--neg); }
+.verdict__detail { color: var(--muted); margin-top: 6px; font-size: 14px; }
+.verdict__numbers { display: flex; flex-wrap: wrap; gap: 26px; align-items: center; }
+.vnum__label { font-size: 11.5px; color: var(--faint); margin-bottom: 4px; max-width: 210px; }
+.vnum__value { font: 600 20px 'Space Grotesk', sans-serif; }
+
+/* ---------- KPI ---------- */
+.kpi-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(184px, 1fr)); }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 15px 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 7px; min-height: 92px; }
+.kpi--hero { grid-column: span 2; background: linear-gradient(160deg, #0E2A1F 0%, #0A7A4B 100%); border: none; color: #fff; }
+.kpi__label { font-size: 12px; color: var(--faint); display: flex; align-items: center; gap: 6px; }
+.kpi--hero .kpi__label { color: rgba(255,255,255,.72); }
+.kpi__value { font: 600 22px/1.1 'Space Grotesk', sans-serif; letter-spacing: -.01em; }
+.kpi--hero .kpi__value { font-size: 26px; }
+.kpi__foot { font-size: 12px; color: var(--muted); margin-top: auto; }
+.kpi--hero .kpi__foot { color: rgba(255,255,255,.8); }
+.kpi__value.pos, .pos { color: var(--pos); }
+.kpi__value.neg, .neg { color: var(--neg); }
+.pill { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 20px; }
+.pill.pos { background: var(--pos-bg); color: var(--pos); }
+.pill.neg { background: var(--neg-bg); color: var(--neg); }
+
+/* ---------- Карточки ---------- */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
+.card__title { font: 600 15px 'Inter', sans-serif; }
+.card__sub { font-size: 12.5px; color: var(--faint); margin-top: 3px; }
+
+/* ---------- Прогресс ---------- */
+.progress-card { margin-top: 14px; }
+.progress-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.progress-pct { font: 700 30px 'Space Grotesk', sans-serif; }
+.bar { position: relative; height: 16px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 20px; margin: 16px 0 10px; overflow: visible; }
+.bar__fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 20px; background: linear-gradient(90deg, var(--brand-d), var(--brand-l)); transition: width .6s ease; max-width: 100%; }
+.bar__plan { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); z-index: 2; }
+.bar__plan::after { content: ""; position: absolute; top: -5px; left: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--ink); }
+.bar-legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 12px; color: var(--muted); }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
+.dot--fill { background: var(--brand); }
+.dot--plan { background: var(--ink); }
+.dot--end  { background: var(--line); border: 1px solid var(--faint); }
+
+/* ---------- Графики ---------- */
+.charts { display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; margin-top: 14px; }
+.chart-wrap { position: relative; height: 300px; margin-top: 12px; }
+
+/* ---------- Блоки период ---------- */
+.blocks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
+.block__head { display: flex; align-items: baseline; gap: 10px; justify-content: space-between; margin-bottom: 14px; }
+.block__tag { font: 600 12px 'Inter', sans-serif; text-transform: uppercase; letter-spacing: .07em; color: var(--brand-d); background: var(--pos-bg); padding: 3px 9px; border-radius: 7px; }
+.block__date { font-size: 12.5px; color: var(--faint); }
+.stat { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px dashed var(--line); gap: 10px; }
+.stat:last-child { border-bottom: none; }
+.stat__label { font-size: 13px; color: var(--muted); }
+.stat__value { font: 600 15px 'Space Grotesk', sans-serif; text-align: right; }
+
+/* ---------- Сравнение ---------- */
+.compare-card { margin-top: 14px; }
+.compare-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 14px; }
+.cmp { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: var(--surface-2); }
+.cmp__label { font-size: 12px; color: var(--faint); }
+.cmp__now { font: 600 21px 'Space Grotesk', sans-serif; margin: 6px 0 2px; }
+.cmp__prev { font-size: 12px; color: var(--muted); }
+.cmp__delta { margin-top: 8px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+
+/* ---------- Таблица ---------- */
+.table-card { margin-top: 14px; }
+.table-scroll { overflow-x: auto; margin-top: 12px; -webkit-overflow-scrolling: touch; }
+.day-table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 640px; }
+.day-table th { text-align: left; font: 600 11.5px 'Inter', sans-serif; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); padding: 8px 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); }
+.day-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.day-table td.num, .day-table th.num { text-align: right; }
+.day-table tbody tr.behind { background: var(--neg-bg); }
+.day-table tbody tr.ahead  { background: var(--pos-bg); }
+.day-table tbody tr.future { color: var(--faint); }
+.day-table tbody tr.is-today td { font-weight: 600; box-shadow: inset 3px 0 0 var(--brand); }
+.tag-status { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+.tag-status.s-ahead  { background: #fff; color: var(--pos); border: 1px solid var(--pos); }
+.tag-status.s-behind { background: #fff; color: var(--neg); border: 1px solid var(--neg); }
+.tag-status.s-future { background: var(--surface-2); color: var(--faint); }
+
+.foot { text-align: center; color: var(--faint); font-size: 12.5px; margin-top: 34px; }
+.foot code { background: var(--surface); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; }
+
+/* ---------- Адаптив ---------- */
+@media (max-width: 920px) {
+  .charts { grid-template-columns: 1fr; }
+  .blocks { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  body { font-size: 14px; }
+  .app { padding: 16px 12px 48px; }
+  .filters { width: 100%; }
+  .field { flex: 1 1 calc(50% - 5px); }
+  .select { min-width: 0; width: 100%; }
+  .verdict { padding: 18px; }
+  .verdict__status { font-size: 22px; }
+  .verdict__numbers { gap: 16px; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .kpi--hero { grid-column: span 2; }
+  .progress-pct { font-size: 24px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---------- Календарь (точка отсчёта) ---------- */
+.today-input {
+  font: 600 14px 'Space Grotesk', sans-serif; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 8px 12px; cursor: pointer; min-width: 150px;
+}
+.today-input:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+
+/* ---------- Редактор плана ---------- */
+.plan-card { margin-top: 14px; }
+.plan-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.btn-ghost {
+  font: 600 13px 'Inter', sans-serif; color: var(--brand-d); background: var(--pos-bg);
+  border: 1px solid transparent; border-radius: 9px; padding: 8px 14px; cursor: pointer; white-space: nowrap;
+}
+.btn-ghost:hover { border-color: var(--brand); }
+.plan-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); margin-top: 14px; }
+.plan-cell { display: flex; flex-direction: column; gap: 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.plan-cell--hero { background: var(--pos-bg); border-color: var(--brand); }
+.plan-cell__label { font-size: 12.5px; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.plan-cell__unit { font-size: 11px; color: var(--faint); font-weight: 600; }
+.plan-input {
+  font: 600 18px 'Space Grotesk', sans-serif; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 9px;
+  padding: 8px 10px; width: 100%; -moz-appearance: textfield;
+}
+.plan-input::-webkit-outer-spin-button, .plan-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.plan-input:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; border-color: var(--brand); }
+.plan-cell--hero .plan-input { border-color: var(--brand); }
+
+</style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- Шапка -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__mark">B</div>
+        <div>
+          <div class="brand__name">BIOBORO</div>
+          <div class="brand__sub">Трекер выполнения плана</div>
+        </div>
+      </div>
+      <div class="filters">
+        <div class="field"><span class="field__label">Месяц</span><select id="f-month" class="select"></select></div>
+        <div class="field"><span class="field__label">Канал</span><select id="f-channel" class="select"></select></div>
+        <div class="field"><span class="field__label">Метрика</span><select id="f-metric" class="select"></select></div>
+        <div class="field field--date"><span class="field__label">Сегодня (точка отсчёта)</span><input type="date" id="today-input" class="today-input"></div>
+      </div>
+    </header>
+
+    <!-- Баннер-вердикт -->
+    <section id="verdict" class="verdict">
+      <div class="verdict__main">
+        <div id="verdict-arrow" class="verdict__icon">↑</div>
+        <div>
+          <div id="verdict-status" class="verdict__status">—</div>
+          <div id="verdict-detail" class="verdict__detail">—</div>
+        </div>
+      </div>
+      <div class="verdict__numbers">
+        <div><div class="vnum__label">Выполнение плана к дате</div><div id="v-completion" class="vnum__value">—</div></div>
+        <div><div class="vnum__label">Нужно добрать прямо сейчас</div><div id="v-catchup" class="vnum__value">—</div></div>
+        <div><div class="vnum__label">Нужный темп до конца месяца</div><div id="v-runrate" class="vnum__value">—</div></div>
+      </div>
+    </section>
+
+    <!-- Редактор плана на месяц -->
+    <section class="card plan-card">
+      <div class="plan-head">
+        <div>
+          <div class="card__title">План на месяц — <span id="plan-month">—</span></div>
+          <div class="card__sub">Обычно ставят чистую выручку в деньгах. Изменения применяются сразу и сохраняются в браузере.</div>
+        </div>
+        <button id="plan-reset" class="btn-ghost" type="button">Сбросить к data.json</button>
+      </div>
+      <div id="plan-cells" class="plan-grid"></div>
+    </section>
+
+    <!-- KPI -->
+    <h2 class="section-title">Ключевые показатели <span id="kpi-scope" class="muted-inline"></span></h2>
+    <section id="kpi-grid" class="kpi-grid"></section>
+
+    <!-- Прогресс месяца -->
+    <section class="card progress-card">
+      <div class="progress-head">
+        <div>
+          <div class="card__title">Прогресс месяца</div>
+          <div id="progress-sub" class="card__sub">—</div>
+        </div>
+        <div id="progress-pct" class="progress-pct">—</div>
+      </div>
+      <div class="bar">
+        <div id="bar-fill" class="bar__fill"></div>
+        <div id="bar-plan" class="bar__plan"></div>
+      </div>
+      <div class="bar-legend">
+        <span><span class="dot dot--fill"></span>Факт (накопит.)</span>
+        <span><span class="dot dot--plan"></span>План к сегодняшнему дню</span>
+        <span><span class="dot dot--end"></span>100% месяца — правый край</span>
+      </div>
+    </section>
+
+    <!-- Графики -->
+    <section class="charts">
+      <div class="card">
+        <div class="card__title">Накопительно: план vs факт</div>
+        <div id="chart1-sub" class="card__sub">—</div>
+        <div class="chart-wrap"><canvas id="chart-cumulative"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card__title">Каналы: текущий период vs прошлый месяц</div>
+        <div class="card__sub">Красным — каналы, просевшие к прошлому месяцу</div>
+        <div class="chart-wrap"><canvas id="chart-channels"></canvas></div>
+      </div>
+    </section>
+
+    <!-- Блоки период -->
+    <section class="blocks">
+      <div id="block-today" class="card">
+        <div class="block__head"><span class="block__tag">Сегодня</span><span id="today-date" class="block__date">—</span></div>
+        <div class="block__body"></div>
+      </div>
+      <div id="block-week" class="card">
+        <div class="block__head"><span class="block__tag">Неделя</span><span id="week-range" class="block__date">—</span></div>
+        <div class="block__body"></div>
+      </div>
+      <div id="block-month" class="card">
+        <div class="block__head"><span class="block__tag">Месяц</span><span id="month-name" class="block__date">—</span></div>
+        <div class="block__body"></div>
+      </div>
+    </section>
+
+    <!-- Структура расходов и прибыли -->
+    <section class="card cost-card">
+      <div class="card__title">Структура расходов и прибыли</div>
+      <div id="cost-sub" class="card__sub">—</div>
+      <div id="cost-body"></div>
+    </section>
+
+    <!-- Сравнение с прошлым месяцем -->
+    <section class="card compare-card">
+      <div class="card__title">Сравнение с прошлым месяцем <span id="compare-scope" class="muted-inline"></span></div>
+      <div id="compare-sub" class="card__sub">—</div>
+      <div id="compare-grid" class="compare-grid"></div>
+    </section>
+
+    <!-- Таблица по дням -->
+    <section class="card table-card">
+      <div class="card__title">Динамика по дням</div>
+      <div class="card__sub">Зелёным — дни с опережением плана, красным — с отставанием</div>
+      <div class="table-scroll">
+        <table id="day-table" class="day-table">
+          <thead><tr>
+            <th>День</th>
+            <th class="num">План/день</th>
+            <th class="num">Факт/день</th>
+            <th class="num">План накопит.</th>
+            <th class="num">Факт накопит.</th>
+            <th class="num">Δ накопит.</th>
+            <th class="num">% плана</th>
+            <th>Статус</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="foot">Автономная версия (данные встроены) · MVP · BIOBORO · многофайловый проект и README — в архиве</p>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script>
+window.BIOBORO_DATA = {
+  "meta": {
+    "business": "BIOBORO",
+    "currency": "RUB",
+    "generated_at": "2026-06-10",
+    "default_month": "2026-06",
+    "default_metric": "revenue_buyouts",
+    "channels": [
+      "Wildberries",
+      "Ozon",
+      "Site",
+      "Clinics",
+      "VK",
+      "YouTube"
+    ]
+  },
+  "plans": {
+    "2026-05": {
+      "revenue_buyouts": 9000000,
+      "revenue_orders": 11250000,
+      "orders_count": 6618,
+      "buyouts_count": 5294,
+      "net_revenue": 3780000
+    },
+    "2026-06": {
+      "revenue_buyouts": 10000000,
+      "revenue_orders": 12500000,
+      "orders_count": 7353,
+      "buyouts_count": 5882,
+      "net_revenue": 4200000
+    }
+  },
+  "data": [
+    {
+      "date": "2026-05-01",
+      "channel": "Wildberries",
+      "revenue_orders": 208340,
+      "revenue_buyouts": 160810,
+      "orders_count": 133,
+      "buyouts_count": 104,
+      "ad_spend": 34160,
+      "logistics": 11630,
+      "commissions": 29050,
+      "penalties": 1930,
+      "other_costs": 1610,
+      "net_revenue": 82430,
+      "margin": 51.3
+    },
+    {
+      "date": "2026-05-01",
+      "channel": "Ozon",
+      "revenue_orders": 94270,
+      "revenue_buyouts": 76480,
+      "orders_count": 59,
+      "buyouts_count": 47,
+      "ad_spend": 13570,
+      "logistics": 5870,
+      "commissions": 12220,
+      "penalties": 760,
+      "other_costs": 760,
+      "net_revenue": 43300,
+      "margin": 56.6
+    },
+    {
+      "date": "2026-05-01",
+      "channel": "Site",
+      "revenue_orders": 62650,
+      "revenue_buyouts": 58200,
+      "orders_count": 30,
+      "buyouts_count": 28,
+      "ad_spend": 6940,
+      "logistics": 2930,
+      "commissions": 1740,
+      "penalties": 60,
+      "other_costs": 350,
+      "net_revenue": 46180,
+      "margin": 79.3
+    },
+    {
+      "date": "2026-05-01",
+      "channel": "Clinics",
+      "revenue_orders": 40920,
+      "revenue_buyouts": 42940,
+      "orders_count": 11,
+      "buyouts_count": 11,
+      "ad_spend": 2070,
+      "logistics": 890,
+      "commissions": 880,
+      "penalties": 0,
+      "other_costs": 170,
+      "net_revenue": 38930,
+      "margin": 90.7
+    },
+    {
+      "date": "2026-05-01",
+      "channel": "VK",
+      "revenue_orders": 17470,
+      "revenue_buyouts": 15020,
+      "orders_count": 9,
+      "buyouts_count": 8,
+      "ad_spend": 3220,
+      "logistics": 750,
+      "commissions": 440,
+      "penalties": 50,
+      "other_costs": 90,
+      "net_revenue": 10470,
+      "margin": 69.7
+    },
+    {
+      "date": "2026-05-01",
+      "channel": "YouTube",
+      "revenue_orders": 12550,
+      "revenue_buyouts": 9920,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 2010,
+      "logistics": 500,
+      "commissions": 300,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 7020,
+      "margin": 70.8
+    },
+    {
+      "date": "2026-05-02",
+      "channel": "Wildberries",
+      "revenue_orders": 173140,
+      "revenue_buyouts": 133910,
+      "orders_count": 110,
+      "buyouts_count": 86,
+      "ad_spend": 24260,
+      "logistics": 9240,
+      "commissions": 24170,
+      "penalties": 1610,
+      "other_costs": 1340,
+      "net_revenue": 73290,
+      "margin": 54.7
+    },
+    {
+      "date": "2026-05-02",
+      "channel": "Ozon",
+      "revenue_orders": 62660,
+      "revenue_buyouts": 50190,
+      "orders_count": 39,
+      "buyouts_count": 31,
+      "ad_spend": 8780,
+      "logistics": 3190,
+      "commissions": 7840,
+      "penalties": 500,
+      "other_costs": 500,
+      "net_revenue": 29380,
+      "margin": 58.5
+    },
+    {
+      "date": "2026-05-02",
+      "channel": "Site",
+      "revenue_orders": 51380,
+      "revenue_buyouts": 46250,
+      "orders_count": 24,
+      "buyouts_count": 22,
+      "ad_spend": 5870,
+      "logistics": 2290,
+      "commissions": 1390,
+      "penalties": 50,
+      "other_costs": 280,
+      "net_revenue": 36370,
+      "margin": 78.6
+    },
+    {
+      "date": "2026-05-02",
+      "channel": "Clinics",
+      "revenue_orders": 30620,
+      "revenue_buyouts": 30330,
+      "orders_count": 8,
+      "buyouts_count": 8,
+      "ad_spend": 1550,
+      "logistics": 620,
+      "commissions": 620,
+      "penalties": 0,
+      "other_costs": 120,
+      "net_revenue": 27420,
+      "margin": 90.4
+    },
+    {
+      "date": "2026-05-02",
+      "channel": "VK",
+      "revenue_orders": 20710,
+      "revenue_buyouts": 18070,
+      "orders_count": 11,
+      "buyouts_count": 10,
+      "ad_spend": 4070,
+      "logistics": 860,
+      "commissions": 560,
+      "penalties": 50,
+      "other_costs": 110,
+      "net_revenue": 12420,
+      "margin": 68.7
+    },
+    {
+      "date": "2026-05-02",
+      "channel": "YouTube",
+      "revenue_orders": 10550,
+      "revenue_buyouts": 9610,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 1870,
+      "logistics": 440,
+      "commissions": 280,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 6930,
+      "margin": 72.1
+    },
+    {
+      "date": "2026-05-03",
+      "channel": "Wildberries",
+      "revenue_orders": 139090,
+      "revenue_buyouts": 109580,
+      "orders_count": 91,
+      "buyouts_count": 71,
+      "ad_spend": 21580,
+      "logistics": 7080,
+      "commissions": 19790,
+      "penalties": 1310,
+      "other_costs": 1100,
+      "net_revenue": 58720,
+      "margin": 53.6
+    },
+    {
+      "date": "2026-05-03",
+      "channel": "Ozon",
+      "revenue_orders": 62670,
+      "revenue_buyouts": 50140,
+      "orders_count": 39,
+      "buyouts_count": 31,
+      "ad_spend": 9390,
+      "logistics": 3270,
+      "commissions": 8020,
+      "penalties": 500,
+      "other_costs": 500,
+      "net_revenue": 28460,
+      "margin": 56.8
+    },
+    {
+      "date": "2026-05-03",
+      "channel": "Site",
+      "revenue_orders": 43940,
+      "revenue_buyouts": 39430,
+      "orders_count": 21,
+      "buyouts_count": 19,
+      "ad_spend": 5410,
+      "logistics": 1780,
+      "commissions": 1150,
+      "penalties": 40,
+      "other_costs": 240,
+      "net_revenue": 30810,
+      "margin": 78.1
+    },
+    {
+      "date": "2026-05-03",
+      "channel": "Clinics",
+      "revenue_orders": 33650,
+      "revenue_buyouts": 34120,
+      "orders_count": 9,
+      "buyouts_count": 9,
+      "ad_spend": 1570,
+      "logistics": 660,
+      "commissions": 680,
+      "penalties": 0,
+      "other_costs": 140,
+      "net_revenue": 31070,
+      "margin": 91.1
+    },
+    {
+      "date": "2026-05-03",
+      "channel": "VK",
+      "revenue_orders": 15510,
+      "revenue_buyouts": 12960,
+      "orders_count": 8,
+      "buyouts_count": 7,
+      "ad_spend": 3080,
+      "logistics": 670,
+      "commissions": 390,
+      "penalties": 40,
+      "other_costs": 80,
+      "net_revenue": 8700,
+      "margin": 67.1
+    },
+    {
+      "date": "2026-05-03",
+      "channel": "YouTube",
+      "revenue_orders": 10210,
+      "revenue_buyouts": 9600,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 1740,
+      "logistics": 500,
+      "commissions": 280,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 6990,
+      "margin": 72.8
+    },
+    {
+      "date": "2026-05-04",
+      "channel": "Wildberries",
+      "revenue_orders": 162240,
+      "revenue_buyouts": 126050,
+      "orders_count": 104,
+      "buyouts_count": 81,
+      "ad_spend": 26830,
+      "logistics": 9140,
+      "commissions": 23260,
+      "penalties": 1510,
+      "other_costs": 1260,
+      "net_revenue": 64050,
+      "margin": 50.8
+    },
+    {
+      "date": "2026-05-04",
+      "channel": "Ozon",
+      "revenue_orders": 84190,
+      "revenue_buyouts": 66550,
+      "orders_count": 51,
+      "buyouts_count": 41,
+      "ad_spend": 11830,
+      "logistics": 4350,
+      "commissions": 10690,
+      "penalties": 670,
+      "other_costs": 670,
+      "net_revenue": 38340,
+      "margin": 57.6
+    },
+    {
+      "date": "2026-05-04",
+      "channel": "Site",
+      "revenue_orders": 54420,
+      "revenue_buyouts": 50760,
+      "orders_count": 26,
+      "buyouts_count": 24,
+      "ad_spend": 5810,
+      "logistics": 2530,
+      "commissions": 1570,
+      "penalties": 50,
+      "other_costs": 300,
+      "net_revenue": 40500,
+      "margin": 79.8
+    },
+    {
+      "date": "2026-05-04",
+      "channel": "Clinics",
+      "revenue_orders": 37280,
+      "revenue_buyouts": 36120,
+      "orders_count": 10,
+      "buyouts_count": 10,
+      "ad_spend": 1880,
+      "logistics": 770,
+      "commissions": 740,
+      "penalties": 0,
+      "other_costs": 140,
+      "net_revenue": 32590,
+      "margin": 90.2
+    },
+    {
+      "date": "2026-05-04",
+      "channel": "VK",
+      "revenue_orders": 21460,
+      "revenue_buyouts": 18510,
+      "orders_count": 11,
+      "buyouts_count": 10,
+      "ad_spend": 4190,
+      "logistics": 910,
+      "commissions": 560,
+      "penalties": 60,
+      "other_costs": 110,
+      "net_revenue": 12680,
+      "margin": 68.5
+    },
+    {
+      "date": "2026-05-04",
+      "channel": "YouTube",
+      "revenue_orders": 10190,
+      "revenue_buyouts": 8630,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 1570,
+      "logistics": 470,
+      "commissions": 260,
+      "penalties": 30,
+      "other_costs": 50,
+      "net_revenue": 6250,
+      "margin": 72.4
+    },
+    {
+      "date": "2026-05-05",
+      "channel": "Wildberries",
+      "revenue_orders": 187410,
+      "revenue_buyouts": 148780,
+      "orders_count": 123,
+      "buyouts_count": 96,
+      "ad_spend": 30570,
+      "logistics": 9930,
+      "commissions": 26770,
+      "penalties": 1790,
+      "other_costs": 1490,
+      "net_revenue": 78230,
+      "margin": 52.6
+    },
+    {
+      "date": "2026-05-05",
+      "channel": "Ozon",
+      "revenue_orders": 81940,
+      "revenue_buyouts": 67960,
+      "orders_count": 52,
+      "buyouts_count": 42,
+      "ad_spend": 11310,
+      "logistics": 4760,
+      "commissions": 11110,
+      "penalties": 680,
+      "other_costs": 680,
+      "net_revenue": 39420,
+      "margin": 58.0
+    },
+    {
+      "date": "2026-05-05",
+      "channel": "Site",
+      "revenue_orders": 57090,
+      "revenue_buyouts": 52390,
+      "orders_count": 27,
+      "buyouts_count": 25,
+      "ad_spend": 6680,
+      "logistics": 2760,
+      "commissions": 1600,
+      "penalties": 50,
+      "other_costs": 310,
+      "net_revenue": 40990,
+      "margin": 78.2
+    },
+    {
+      "date": "2026-05-05",
+      "channel": "Clinics",
+      "revenue_orders": 42050,
+      "revenue_buyouts": 43210,
+      "orders_count": 11,
+      "buyouts_count": 11,
+      "ad_spend": 2210,
+      "logistics": 840,
+      "commissions": 860,
+      "penalties": 0,
+      "other_costs": 170,
+      "net_revenue": 39130,
+      "margin": 90.6
+    },
+    {
+      "date": "2026-05-05",
+      "channel": "VK",
+      "revenue_orders": 20330,
+      "revenue_buyouts": 18160,
+      "orders_count": 11,
+      "buyouts_count": 10,
+      "ad_spend": 3790,
+      "logistics": 950,
+      "commissions": 550,
+      "penalties": 50,
+      "other_costs": 110,
+      "net_revenue": 12710,
+      "margin": 70.0
+    },
+    {
+      "date": "2026-05-05",
+      "channel": "YouTube",
+      "revenue_orders": 10360,
+      "revenue_buyouts": 9360,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 1660,
+      "logistics": 480,
+      "commissions": 290,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 6840,
+      "margin": 73.1
+    },
+    {
+      "date": "2026-05-06",
+      "channel": "Wildberries",
+      "revenue_orders": 205420,
+      "revenue_buyouts": 156710,
+      "orders_count": 129,
+      "buyouts_count": 101,
+      "ad_spend": 29220,
+      "logistics": 10180,
+      "commissions": 28040,
+      "penalties": 1880,
+      "other_costs": 1570,
+      "net_revenue": 85820,
+      "margin": 54.8
+    },
+    {
+      "date": "2026-05-06",
+      "channel": "Ozon",
+      "revenue_orders": 81930,
+      "revenue_buyouts": 65050,
+      "orders_count": 50,
+      "buyouts_count": 40,
+      "ad_spend": 11790,
+      "logistics": 4110,
+      "commissions": 10670,
+      "penalties": 650,
+      "other_costs": 650,
+      "net_revenue": 37180,
+      "margin": 57.2
+    },
+    {
+      "date": "2026-05-06",
+      "channel": "Site",
+      "revenue_orders": 50230,
+      "revenue_buyouts": 45670,
+      "orders_count": 24,
+      "buyouts_count": 22,
+      "ad_spend": 6090,
+      "logistics": 2410,
+      "commissions": 1380,
+      "penalties": 50,
+      "other_costs": 270,
+      "net_revenue": 35470,
+      "margin": 77.7
+    },
+    {
+      "date": "2026-05-06",
+      "channel": "Clinics",
+      "revenue_orders": 35210,
+      "revenue_buyouts": 34400,
+      "orders_count": 9,
+      "buyouts_count": 9,
+      "ad_spend": 1860,
+      "logistics": 660,
+      "commissions": 690,
+      "penalties": 0,
+      "other_costs": 140,
+      "net_revenue": 31050,
+      "margin": 90.3
+    },
+    {
+      "date": "2026-05-06",
+      "channel": "VK",
+      "revenue_orders": 18470,
+      "revenue_buyouts": 17040,
+      "orders_count": 10,
+      "buyouts_count": 9,
+      "ad_spend": 3190,
+      "logistics": 900,
+      "commissions": 520,
+      "penalties": 50,
+      "other_costs": 100,
+      "net_revenue": 12280,
+      "margin": 72.1
+    },
+    {
+      "date": "2026-05-06",
+      "channel": "YouTube",
+      "revenue_orders": 10340,
+      "revenue_buyouts": 8790,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 1810,
+      "logistics": 470,
+      "commissions": 260,
+      "penalties": 30,
+      "other_costs": 50,
+      "net_revenue": 6170,
+      "margin": 70.2
+    },
+    {
+      "date": "2026-05-07",
+      "channel": "Wildberries",
+      "revenue_orders": 224960,
+      "revenue_buyouts": 170080,
+      "orders_count": 141,
+      "buyouts_count": 110,
+      "ad_spend": 33970,
+      "logistics": 13070,
+      "commissions": 30980,
+      "penalties": 2040,
+      "other_costs": 1700,
+      "net_revenue": 88320,
+      "margin": 51.9
+    },
+    {
+      "date": "2026-05-07",
+      "channel": "Ozon",
+      "revenue_orders": 87440,
+      "revenue_buyouts": 69210,
+      "orders_count": 54,
+      "buyouts_count": 43,
+      "ad_spend": 12940,
+      "logistics": 5130,
+      "commissions": 10880,
+      "penalties": 690,
+      "other_costs": 690,
+      "net_revenue": 38880,
+      "margin": 56.2
+    },
+    {
+      "date": "2026-05-07",
+      "channel": "Site",
+      "revenue_orders": 53510,
+      "revenue_buyouts": 49920,
+      "orders_count": 26,
+      "buyouts_count": 24,
+      "ad_spend": 6560,
+      "logistics": 2630,
+      "commissions": 1460,
+      "penalties": 50,
+      "other_costs": 300,
+      "net_revenue": 38920,
+      "margin": 78.0
+    },
+    {
+      "date": "2026-05-07",
+      "channel": "Clinics",
+      "revenue_orders": 35010,
+      "revenue_buyouts": 35150,
+      "orders_count": 9,
+      "buyouts_count": 9,
+      "ad_spend": 1640,
+      "logistics": 650,
+      "commissions": 700,
+      "penalties": 0,
+      "other_costs": 140,
+      "net_revenue": 32020,
+      "margin": 91.1
+    },
+    {
+      "date": "2026-05-07",
+      "channel": "VK",
+      "revenue_orders": 17450,
+      "revenue_buyouts": 15510,
+      "orders_count": 9,
+      "buyouts_count": 8,
+      "ad_spend": 3500,
+      "logistics": 750,
+      "commissions": 470,
+      "penalties": 50,
+      "other_costs": 90,
+      "net_revenue": 10650,
+      "margin": 68.7
+    },
+    {
+      "date": "2026-05-07",
+      "channel": "YouTube",
+      "revenue_orders": 10790,
+      "revenue_buyouts": 9010,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 1780,
+      "logistics": 470,
+      "commissions": 270,
+      "penalties": 30,
+      "other_costs": 50,
+      "net_revenue": 6410,
+      "margin": 71.1
+    },
+    {
+      "date": "2026-05-08",
+      "channel": "Wildberries",
+      "revenue_orders": 219280,
+      "revenue_buyouts": 169790,
+      "orders_count": 141,
+      "buyouts_count": 110,
+      "ad_spend": 31370,
+      "logistics": 10870,
+      "commissions": 29870,
+      "penalties": 2040,
+      "other_costs": 1700,
+      "net_revenue": 93940,
+      "margin": 55.3
+    },
+    {
+      "date": "2026-05-08",
+      "channel": "Ozon",
+      "revenue_orders": 99720,
+      "revenue_buyouts": 80730,
+      "orders_count": 62,
+      "buyouts_count": 50,
+      "ad_spend": 14100,
+      "logistics": 5750,
+      "commissions": 13050,
+      "penalties": 810,
+      "other_costs": 810,
+      "net_revenue": 46210,
+      "margin": 57.2
+    },
+    {
+      "date": "2026-05-08",
+      "channel": "Site",
+      "revenue_orders": 61560,
+      "revenue_buyouts": 56760,
+      "orders_count": 29,
+      "buyouts_count": 27,
+      "ad_spend": 6900,
+      "logistics": 2910,
+      "commissions": 1720,
+      "penalties": 60,
+      "other_costs": 340,
+      "net_revenue": 44830,
+      "margin": 79.0
+    },
+    {
+      "date": "2026-05-08",
+      "channel": "Clinics",
+      "revenue_orders": 44280,
+      "revenue_buyouts": 44830,
+      "orders_count": 12,
+      "buyouts_count": 12,
+      "ad_spend": 2190,
+      "logistics": 850,
+      "commissions": 880,
+      "penalties": 0,
+      "other_costs": 180,
+      "net_revenue": 40730,
+      "margin": 90.9
+    },
+    {
+      "date": "2026-05-08",
+      "channel": "VK",
+      "revenue_orders": 22200,
+      "revenue_buyouts": 20740,
+      "orders_count": 12,
+      "buyouts_count": 11,
+      "ad_spend": 3800,
+      "logistics": 1120,
+      "commissions": 640,
+      "penalties": 60,
+      "other_costs": 120,
+      "net_revenue": 15000,
+      "margin": 72.3
+    },
+    {
+      "date": "2026-05-08",
+      "channel": "YouTube",
+      "revenue_orders": 12030,
+      "revenue_buyouts": 11180,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 2020,
+      "logistics": 600,
+      "commissions": 340,
+      "penalties": 30,
+      "other_costs": 70,
+      "net_revenue": 8120,
+      "margin": 72.6
+    },
+    {
+      "date": "2026-05-09",
+      "channel": "Wildberries",
+      "revenue_orders": 183080,
+      "revenue_buyouts": 143690,
+      "orders_count": 119,
+      "buyouts_count": 93,
+      "ad_spend": 28740,
+      "logistics": 11020,
+      "commissions": 26110,
+      "penalties": 1720,
+      "other_costs": 1440,
+      "net_revenue": 74660,
+      "margin": 52.0
+    },
+    {
+      "date": "2026-05-09",
+      "channel": "Ozon",
+      "revenue_orders": 73680,
+      "revenue_buyouts": 60380,
+      "orders_count": 46,
+      "buyouts_count": 37,
+      "ad_spend": 11530,
+      "logistics": 4130,
+      "commissions": 9720,
+      "penalties": 600,
+      "other_costs": 600,
+      "net_revenue": 33800,
+      "margin": 56.0
+    },
+    {
+      "date": "2026-05-09",
+      "channel": "Site",
+      "revenue_orders": 55910,
+      "revenue_buyouts": 53520,
+      "orders_count": 27,
+      "buyouts_count": 25,
+      "ad_spend": 6090,
+      "logistics": 2590,
+      "commissions": 1600,
+      "penalties": 50,
+      "other_costs": 320,
+      "net_revenue": 42870,
+      "margin": 80.1
+    },
+    {
+      "date": "2026-05-09",
+      "channel": "Clinics",
+      "revenue_orders": 27280,
+      "revenue_buyouts": 28400,
+      "orders_count": 7,
+      "buyouts_count": 7,
+      "ad_spend": 1280,
+      "logistics": 530,
+      "commissions": 580,
+      "penalties": 0,
+      "other_costs": 110,
+      "net_revenue": 25900,
+      "margin": 91.2
+    },
+    {
+      "date": "2026-05-09",
+      "channel": "VK",
+      "revenue_orders": 18660,
+      "revenue_buyouts": 17730,
+      "orders_count": 10,
+      "buyouts_count": 9,
+      "ad_spend": 3610,
+      "logistics": 940,
+      "commissions": 520,
+      "penalties": 50,
+      "other_costs": 110,
+      "net_revenue": 12500,
+      "margin": 70.5
+    },
+    {
+      "date": "2026-05-09",
+      "channel": "YouTube",
+      "revenue_orders": 12020,
+      "revenue_buyouts": 9630,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 1900,
+      "logistics": 460,
+      "commissions": 290,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 6890,
+      "margin": 71.5
+    },
+    {
+      "date": "2026-05-10",
+      "channel": "Wildberries",
+      "revenue_orders": 178440,
+      "revenue_buyouts": 143270,
+      "orders_count": 118,
+      "buyouts_count": 92,
+      "ad_spend": 27410,
+      "logistics": 9360,
+      "commissions": 26470,
+      "penalties": 1720,
+      "other_costs": 1430,
+      "net_revenue": 76880,
+      "margin": 53.7
+    },
+    {
+      "date": "2026-05-10",
+      "channel": "Ozon",
+      "revenue_orders": 80400,
+      "revenue_buyouts": 64460,
+      "orders_count": 50,
+      "buyouts_count": 40,
+      "ad_spend": 11200,
+      "logistics": 4300,
+      "commissions": 10540,
+      "penalties": 640,
+      "other_costs": 640,
+      "net_revenue": 37140,
+      "margin": 57.6
+    },
+    {
+      "date": "2026-05-10",
+      "channel": "Site",
+      "revenue_orders": 49740,
+      "revenue_buyouts": 45690,
+      "orders_count": 24,
+      "buyouts_count": 22,
+      "ad_spend": 5160,
+      "logistics": 2240,
+      "commissions": 1340,
+      "penalties": 50,
+      "other_costs": 270,
+      "net_revenue": 36630,
+      "margin": 80.2
+    },
+    {
+      "date": "2026-05-10",
+      "channel": "Clinics",
+      "revenue_orders": 26380,
+      "revenue_buyouts": 27920,
+      "orders_count": 7,
+      "buyouts_count": 7,
+      "ad_spend": 1390,
+      "logistics": 520,
+      "commissions": 570,
+      "penalties": 0,
+      "other_costs": 110,
+      "net_revenue": 25330,
+      "margin": 90.7
+    },
+    {
+      "date": "2026-05-10",
+      "channel": "VK",
+      "revenue_orders": 15580,
+      "revenue_buyouts": 12450,
+      "orders_count": 8,
+      "buyouts_count": 7,
+      "ad_spend": 2930,
+      "logistics": 600,
+      "commissions": 370,
+      "penalties": 40,
+      "other_costs": 70,
+      "net_revenue": 8440,
+      "margin": 67.8
+    },
+    {
+      "date": "2026-05-10",
+      "channel": "YouTube",
+      "revenue_orders": 8910,
+      "revenue_buyouts": 7770,
+      "orders_count": 5,
+      "buyouts_count": 4,
+      "ad_spend": 1470,
+      "logistics": 390,
+      "commissions": 230,
+      "penalties": 20,
+      "other_costs": 50,
+      "net_revenue": 5610,
+      "margin": 72.2
+    },
+    {
+      "date": "2026-05-11",
+      "channel": "Wildberries",
+      "revenue_orders": 174730,
+      "revenue_buyouts": 136450,
+      "orders_count": 113,
+      "buyouts_count": 88,
+      "ad_spend": 27600,
+      "logistics": 9110,
+      "commissions": 24440,
+      "penalties": 1640,
+      "other_costs": 1360,
+      "net_revenue": 72300,
+      "margin": 53.0
+    },
+    {
+      "date": "2026-05-11",
+      "channel": "Ozon",
+      "revenue_orders": 69220,
+      "revenue_buyouts": 56490,
+      "orders_count": 44,
+      "buyouts_count": 35,
+      "ad_spend": 10280,
+      "logistics": 3860,
+      "commissions": 8900,
+      "penalties": 560,
+      "other_costs": 560,
+      "net_revenue": 32330,
+      "margin": 57.2
+    },
+    {
+      "date": "2026-05-11",
+      "channel": "Site",
+      "revenue_orders": 57650,
+      "revenue_buyouts": 53510,
+      "orders_count": 27,
+      "buyouts_count": 25,
+      "ad_spend": 5760,
+      "logistics": 2710,
+      "commissions": 1630,
+      "penalties": 50,
+      "other_costs": 320,
+      "net_revenue": 43040,
+      "margin": 80.4
+    },
+    {
+      "date": "2026-05-11",
+      "channel": "Clinics",
+      "revenue_orders": 37160,
+      "revenue_buyouts": 36120,
+      "orders_count": 10,
+      "buyouts_count": 10,
+      "ad_spend": 2000,
+      "logistics": 790,
+      "commissions": 730,
+      "penalties": 0,
+      "other_costs": 140,
+      "net_revenue": 32460,
+      "margin": 89.9
+    },
+    {
+      "date": "2026-05-11",
+      "channel": "VK",
+      "revenue_orders": 20790,
+      "revenue_buyouts": 19360,
+      "orders_count": 11,
+      "buyouts_count": 10,
+      "ad_spend": 3580,
+      "logistics": 1060,
+      "commissions": 570,
+      "penalties": 60,
+      "other_costs": 120,
+      "net_revenue": 13970,
+      "margin": 72.2
+    },
+    {
+      "date": "2026-05-11",
+      "channel": "YouTube",
+      "revenue_orders": 10520,
+      "revenue_buyouts": 8300,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 1860,
+      "logistics": 370,
+      "commissions": 250,
+      "penalties": 20,
+      "other_costs": 50,
+      "net_revenue": 5750,
+      "margin": 69.3
+    },
+    {
+      "date": "2026-05-12",
+      "channel": "Wildberries",
+      "revenue_orders": 187750,
+      "revenue_buyouts": 151090,
+      "orders_count": 124,
+      "buyouts_count": 97,
+      "ad_spend": 30180,
+      "logistics": 11230,
+      "commissions": 27570,
+      "penalties": 1810,
+      "other_costs": 1510,
+      "net_revenue": 78790,
+      "margin": 52.1
+    },
+    {
+      "date": "2026-05-12",
+      "channel": "Ozon",
+      "revenue_orders": 80550,
+      "revenue_buyouts": 67210,
+      "orders_count": 51,
+      "buyouts_count": 41,
+      "ad_spend": 12080,
+      "logistics": 4990,
+      "commissions": 10760,
+      "penalties": 670,
+      "other_costs": 670,
+      "net_revenue": 38040,
+      "margin": 56.6
+    },
+    {
+      "date": "2026-05-12",
+      "channel": "Site",
+      "revenue_orders": 58270,
+      "revenue_buyouts": 55520,
+      "orders_count": 28,
+      "buyouts_count": 26,
+      "ad_spend": 6550,
+      "logistics": 2700,
+      "commissions": 1660,
+      "penalties": 60,
+      "other_costs": 330,
+      "net_revenue": 44220,
+      "margin": 79.6
+    },
+    {
+      "date": "2026-05-12",
+      "channel": "Clinics",
+      "revenue_orders": 39080,
+      "revenue_buyouts": 37990,
+      "orders_count": 10,
+      "buyouts_count": 10,
+      "ad_spend": 1790,
+      "logistics": 830,
+      "commissions": 760,
+      "penalties": 0,
+      "other_costs": 150,
+      "net_revenue": 34460,
+      "margin": 90.7
+    },
+    {
+      "date": "2026-05-12",
+      "channel": "VK",
+      "revenue_orders": 19180,
+      "revenue_buyouts": 16470,
+      "orders_count": 10,
+      "buyouts_count": 9,
+      "ad_spend": 3330,
+      "logistics": 780,
+      "commissions": 490,
+      "penalties": 50,
+      "other_costs": 100,
+      "net_revenue": 11720,
+      "margin": 71.2
+    },
+    {
+      "date": "2026-05-12",
+      "channel": "YouTube",
+      "revenue_orders": 12280,
+      "revenue_buyouts": 10230,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 1990,
+      "logistics": 510,
+      "commissions": 300,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 7340,
+      "margin": 71.7
+    },
+    {
+      "date": "2026-05-13",
+      "channel": "Wildberries",
+      "revenue_orders": 179140,
+      "revenue_buyouts": 143000,
+      "orders_count": 118,
+      "buyouts_count": 92,
+      "ad_spend": 28480,
+      "logistics": 9820,
+      "commissions": 26450,
+      "penalties": 1720,
+      "other_costs": 1430,
+      "net_revenue": 75100,
+      "margin": 52.5
+    },
+    {
+      "date": "2026-05-13",
+      "channel": "Ozon",
+      "revenue_orders": 91130,
+      "revenue_buyouts": 71360,
+      "orders_count": 55,
+      "buyouts_count": 44,
+      "ad_spend": 13540,
+      "logistics": 5210,
+      "commissions": 11590,
+      "penalties": 710,
+      "other_costs": 710,
+      "net_revenue": 39600,
+      "margin": 55.5
+    },
+    {
+      "date": "2026-05-13",
+      "channel": "Site",
+      "revenue_orders": 66890,
+      "revenue_buyouts": 61270,
+      "orders_count": 32,
+      "buyouts_count": 29,
+      "ad_spend": 8220,
+      "logistics": 3080,
+      "commissions": 1790,
+      "penalties": 60,
+      "other_costs": 370,
+      "net_revenue": 47750,
+      "margin": 77.9
+    },
+    {
+      "date": "2026-05-13",
+      "channel": "Clinics",
+      "revenue_orders": 33640,
+      "revenue_buyouts": 32690,
+      "orders_count": 9,
+      "buyouts_count": 9,
+      "ad_spend": 1540,
+      "logistics": 630,
+      "commissions": 650,
+      "penalties": 0,
+      "other_costs": 130,
+      "net_revenue": 29740,
+      "margin": 91.0
+    },
+    {
+      "date": "2026-05-13",
+      "channel": "VK",
+      "revenue_orders": 16790,
+      "revenue_buyouts": 15480,
+      "orders_count": 9,
+      "buyouts_count": 8,
+      "ad_spend": 3380,
+      "logistics": 760,
+      "commissions": 450,
+      "penalties": 50,
+      "other_costs": 90,
+      "net_revenue": 10750,
+      "margin": 69.4
+    },
+    {
+      "date": "2026-05-13",
+      "channel": "YouTube",
+      "revenue_orders": 10760,
+      "revenue_buyouts": 8780,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 1740,
+      "logistics": 400,
+      "commissions": 260,
+      "penalties": 30,
+      "other_costs": 50,
+      "net_revenue": 6300,
+      "margin": 71.8
+    },
+    {
+      "date": "2026-05-14",
+      "channel": "Wildberries",
+      "revenue_orders": 218420,
+      "revenue_buyouts": 165890,
+      "orders_count": 137,
+      "buyouts_count": 107,
+      "ad_spend": 31850,
+      "logistics": 12110,
+      "commissions": 30620,
+      "penalties": 1990,
+      "other_costs": 1660,
+      "net_revenue": 87660,
+      "margin": 52.8
+    },
+    {
+      "date": "2026-05-14",
+      "channel": "Ozon",
+      "revenue_orders": 94670,
+      "revenue_buyouts": 75960,
+      "orders_count": 59,
+      "buyouts_count": 47,
+      "ad_spend": 13900,
+      "logistics": 5700,
+      "commissions": 12350,
+      "penalties": 760,
+      "other_costs": 760,
+      "net_revenue": 42490,
+      "margin": 55.9
+    },
+    {
+      "date": "2026-05-14",
+      "channel": "Site",
+      "revenue_orders": 63220,
+      "revenue_buyouts": 57790,
+      "orders_count": 30,
+      "buyouts_count": 28,
+      "ad_spend": 6320,
+      "logistics": 2900,
+      "commissions": 1740,
+      "penalties": 60,
+      "other_costs": 350,
+      "net_revenue": 46420,
+      "margin": 80.3
+    },
+    {
+      "date": "2026-05-14",
+      "channel": "Clinics",
+      "revenue_orders": 34210,
+      "revenue_buyouts": 34190,
+      "orders_count": 9,
+      "buyouts_count": 9,
+      "ad_spend": 1680,
+      "logistics": 710,
+      "commissions": 690,
+      "penalties": 0,
+      "other_costs": 140,
+      "net_revenue": 30970,
+      "margin": 90.6
+    },
+    {
+      "date": "2026-05-14",
+      "channel": "VK",
+      "revenue_orders": 22520,
+      "revenue_buyouts": 20020,
+      "orders_count": 12,
+      "buyouts_count": 11,
+      "ad_spend": 3920,
+      "logistics": 990,
+      "commissions": 610,
+      "penalties": 60,
+      "other_costs": 120,
+      "net_revenue": 14320,
+      "margin": 71.5
+    },
+    {
+      "date": "2026-05-14",
+      "channel": "YouTube",
+      "revenue_orders": 10220,
+      "revenue_buyouts": 8870,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 1830,
+      "logistics": 440,
+      "commissions": 270,
+      "penalties": 30,
+      "other_costs": 50,
+      "net_revenue": 6250,
+      "margin": 70.5
+    },
+    {
+      "date": "2026-05-15",
+      "channel": "Wildberries",
+      "revenue_orders": 207550,
+      "revenue_buyouts": 167580,
+      "orders_count": 138,
+      "buyouts_count": 108,
+      "ad_spend": 28260,
+      "logistics": 12820,
+      "commissions": 29650,
+      "penalties": 2010,
+      "other_costs": 1680,
+      "net_revenue": 93160,
+      "margin": 55.6
+    },
+    {
+      "date": "2026-05-15",
+      "channel": "Ozon",
+      "revenue_orders": 78400,
+      "revenue_buyouts": 62610,
+      "orders_count": 49,
+      "buyouts_count": 39,
+      "ad_spend": 10980,
+      "logistics": 4340,
+      "commissions": 10230,
+      "penalties": 630,
+      "other_costs": 630,
+      "net_revenue": 35800,
+      "margin": 57.2
+    },
+    {
+      "date": "2026-05-15",
+      "channel": "Site",
+      "revenue_orders": 57000,
+      "revenue_buyouts": 52020,
+      "orders_count": 27,
+      "buyouts_count": 25,
+      "ad_spend": 6810,
+      "logistics": 2610,
+      "commissions": 1520,
+      "penalties": 50,
+      "other_costs": 310,
+      "net_revenue": 40720,
+      "margin": 78.3
+    },
+    {
+      "date": "2026-05-15",
+      "channel": "Clinics",
+      "revenue_orders": 37270,
+      "revenue_buyouts": 39240,
+      "orders_count": 10,
+      "buyouts_count": 10,
+      "ad_spend": 1830,
+      "logistics": 850,
+      "commissions": 780,
+      "penalties": 0,
+      "other_costs": 160,
+      "net_revenue": 35620,
+      "margin": 90.8
+    },
+    {
+      "date": "2026-05-15",
+      "channel": "VK",
+      "revenue_orders": 18900,
+      "revenue_buyouts": 17390,
+      "orders_count": 10,
+      "buyouts_count": 9,
+      "ad_spend": 3880,
+      "logistics": 890,
+      "commissions": 530,
+      "penalties": 50,
+      "other_costs": 100,
+      "net_revenue": 11940,
+      "margin": 68.7
+    },
+    {
+      "date": "2026-05-15",
+      "channel": "YouTube",
+      "revenue_orders": 12520,
+      "revenue_buyouts": 10190,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 2070,
+      "logistics": 500,
+      "commissions": 310,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 7220,
+      "margin": 70.9
+    },
+    {
+      "date": "2026-05-16",
+      "channel": "Wildberries",
+      "revenue_orders": 164020,
+      "revenue_buyouts": 129650,
+      "orders_count": 108,
+      "buyouts_count": 84,
+      "ad_spend": 27230,
+      "logistics": 9680,
+      "commissions": 23480,
+      "penalties": 1560,
+      "other_costs": 1300,
+      "net_revenue": 66400,
+      "margin": 51.2
+    },
+    {
+      "date": "2026-05-16",
+      "channel": "Ozon",
+      "revenue_orders": 73510,
+      "revenue_buyouts": 60530,
+      "orders_count": 46,
+      "buyouts_count": 37,
+      "ad_spend": 10580,
+      "logistics": 4130,
+      "commissions": 9840,
+      "penalties": 610,
+      "other_costs": 610,
+      "net_revenue": 34760,
+      "margin": 57.4
+    },
+    {
+      "date": "2026-05-16",
+      "channel": "Site",
+      "revenue_orders": 53330,
+      "revenue_buyouts": 47900,
+      "orders_count": 25,
+      "buyouts_count": 23,
+      "ad_spend": 5490,
+      "logistics": 2590,
+      "commissions": 1470,
+      "penalties": 50,
+      "other_costs": 290,
+      "net_revenue": 38010,
+      "margin": 79.4
+    },
+    {
+      "date": "2026-05-16",
+      "channel": "Clinics",
+      "revenue_orders": 38830,
+      "revenue_buyouts": 37440,
+      "orders_count": 10,
+      "buyouts_count": 10,
+      "ad_spend": 1790,
+      "logistics": 720,
+      "commissions": 730,
+      "penalties": 0,
+      "other_costs": 150,
+      "net_revenue": 34050,
+      "margin": 90.9
+    },
+    {
+      "date": "2026-05-16",
+      "channel": "VK",
+      "revenue_orders": 16840,
+      "revenue_buyouts": 14670,
+      "orders_count": 9,
+      "buyouts_count": 8,
+      "ad_spend": 3130,
+      "logistics": 780,
+      "commissions": 440,
+      "penalties": 40,
+      "other_costs": 90,
+      "net_revenue": 10190,
+      "margin": 69.5
+    },
+    {
+      "date": "2026-05-16",
+      "channel": "YouTube",
+      "revenue_orders": 12540,
+      "revenue_buyouts": 10250,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 2180,
+      "logistics": 480,
+      "commissions": 300,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 7200,
+      "margin": 70.2
+    },
+    {
+      "date": "2026-05-17",
+      "channel": "Wildberries",
+      "revenue_orders": 142350,
+      "revenue_buyouts": 111930,
+      "orders_count": 92,
+      "buyouts_count": 72,
+      "ad_spend": 19720,
+      "logistics": 7110,
+      "commissions": 20490,
+      "penalties": 1340,
+      "other_costs": 1120,
+      "net_revenue": 62150,
+      "margin": 55.5
+    },
+    {
+      "date": "2026-05-17",
+      "channel": "Ozon",
+      "revenue_orders": 66550,
+      "revenue_buyouts": 55610,
+      "orders_count": 42,
+      "buyouts_count": 34,
+      "ad_spend": 9880,
+      "logistics": 3530,
+      "commissions": 8880,
+      "penalties": 560,
+      "other_costs": 560,
+      "net_revenue": 32200,
+      "margin": 57.9
+    },
+    {
+      "date": "2026-05-17",
+      "channel": "Site",
+      "revenue_orders": 45240,
+      "revenue_buyouts": 41100,
+      "orders_count": 22,
+      "buyouts_count": 20,
+      "ad_spend": 4730,
+      "logistics": 2220,
+      "commissions": 1260,
+      "penalties": 40,
+      "other_costs": 250,
+      "net_revenue": 32600,
+      "margin": 79.3
+    },
+    {
+      "date": "2026-05-17",
+      "channel": "Clinics",
+      "revenue_orders": 33450,
+      "revenue_buyouts": 32880,
+      "orders_count": 9,
+      "buyouts_count": 9,
+      "ad_spend": 1590,
+      "logistics": 680,
+      "commissions": 640,
+      "penalties": 0,
+      "other_costs": 130,
+      "net_revenue": 29840,
+      "margin": 90.8
+    },
+    {
+      "date": "2026-05-17",
+      "channel": "VK",
+      "revenue_orders": 17410,
+      "revenue_buyouts": 15650,
+      "orders_count": 9,
+      "buyouts_count": 8,
+      "ad_spend": 3640,
+      "logistics": 710,
+      "commissions": 480,
+      "penalties": 50,
+      "other_costs": 90,
+      "net_revenue": 10680,
+      "margin": 68.2
+    },
+    {
+      "date": "2026-05-17",
+      "channel": "YouTube",
+      "revenue_orders": 12490,
+      "revenue_buyouts": 9730,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 2280,
+      "logistics": 460,
+      "commissions": 290,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 6610,
+      "margin": 67.9
+    },
+    {
+      "date": "2026-05-18",
+      "channel": "Wildberries",
+      "revenue_orders": 159310,
+      "revenue_buyouts": 121320,
+      "orders_count": 100,
+      "buyouts_count": 78,
+      "ad_spend": 26170,
+      "logistics": 9310,
+      "commissions": 22220,
+      "penalties": 1460,
+      "other_costs": 1210,
+      "net_revenue": 60950,
+      "margin": 50.2
+    },
+    {
+      "date": "2026-05-18",
+      "channel": "Ozon",
+      "revenue_orders": 78120,
+      "revenue_buyouts": 63680,
+      "orders_count": 49,
+      "buyouts_count": 39,
+      "ad_spend": 11710,
+      "logistics": 4440,
+      "commissions": 10260,
+      "penalties": 640,
+      "other_costs": 640,
+      "net_revenue": 35990,
+      "margin": 56.5
+    },
+    {
+      "date": "2026-05-18",
+      "channel": "Site",
+      "revenue_orders": 58940,
+      "revenue_buyouts": 54360,
+      "orders_count": 28,
+      "buyouts_count": 26,
+      "ad_spend": 7070,
+      "logistics": 2740,
+      "commissions": 1620,
+      "penalties": 50,
+      "other_costs": 330,
+      "net_revenue": 42550,
+      "margin": 78.3
+    },
+    {
+      "date": "2026-05-18",
+      "channel": "Clinics",
+      "revenue_orders": 40890,
+      "revenue_buyouts": 41920,
+      "orders_count": 11,
+      "buyouts_count": 11,
+      "ad_spend": 2180,
+      "logistics": 860,
+      "commissions": 820,
+      "penalties": 0,
+      "other_costs": 170,
+      "net_revenue": 37890,
+      "margin": 90.4
+    },
+    {
+      "date": "2026-05-18",
+      "channel": "VK",
+      "revenue_orders": 19290,
+      "revenue_buyouts": 16160,
+      "orders_count": 10,
+      "buyouts_count": 9,
+      "ad_spend": 4070,
+      "logistics": 840,
+      "commissions": 480,
+      "penalties": 50,
+      "other_costs": 100,
+      "net_revenue": 10620,
+      "margin": 65.7
+    },
+    {
+      "date": "2026-05-18",
+      "channel": "YouTube",
+      "revenue_orders": 13760,
+      "revenue_buyouts": 11530,
+      "orders_count": 8,
+      "buyouts_count": 7,
+      "ad_spend": 2420,
+      "logistics": 600,
+      "commissions": 340,
+      "penalties": 30,
+      "other_costs": 70,
+      "net_revenue": 8070,
+      "margin": 70.0
+    },
+    {
+      "date": "2026-05-19",
+      "channel": "Wildberries",
+      "revenue_orders": 222960,
+      "revenue_buyouts": 168240,
+      "orders_count": 140,
+      "buyouts_count": 109,
+      "ad_spend": 31820,
+      "logistics": 10970,
+      "commissions": 31150,
+      "penalties": 2020,
+      "other_costs": 1680,
+      "net_revenue": 90600,
+      "margin": 53.9
+    },
+    {
+      "date": "2026-05-19",
+      "channel": "Ozon",
+      "revenue_orders": 92920,
+      "revenue_buyouts": 76280,
+      "orders_count": 59,
+      "buyouts_count": 47,
+      "ad_spend": 14190,
+      "logistics": 5780,
+      "commissions": 12150,
+      "penalties": 760,
+      "other_costs": 760,
+      "net_revenue": 42640,
+      "margin": 55.9
+    },
+    {
+      "date": "2026-05-19",
+      "channel": "Site",
+      "revenue_orders": 49790,
+      "revenue_buyouts": 45780,
+      "orders_count": 24,
+      "buyouts_count": 22,
+      "ad_spend": 5250,
+      "logistics": 2140,
+      "commissions": 1370,
+      "penalties": 50,
+      "other_costs": 270,
+      "net_revenue": 36700,
+      "margin": 80.2
+    },
+    {
+      "date": "2026-05-19",
+      "channel": "Clinics",
+      "revenue_orders": 37300,
+      "revenue_buyouts": 37450,
+      "orders_count": 10,
+      "buyouts_count": 10,
+      "ad_spend": 1960,
+      "logistics": 690,
+      "commissions": 760,
+      "penalties": 0,
+      "other_costs": 150,
+      "net_revenue": 33890,
+      "margin": 90.5
+    },
+    {
+      "date": "2026-05-19",
+      "channel": "VK",
+      "revenue_orders": 22500,
+      "revenue_buyouts": 19980,
+      "orders_count": 12,
+      "buyouts_count": 11,
+      "ad_spend": 4750,
+      "logistics": 990,
+      "commissions": 590,
+      "penalties": 60,
+      "other_costs": 120,
+      "net_revenue": 13470,
+      "margin": 67.4
+    },
+    {
+      "date": "2026-05-19",
+      "channel": "YouTube",
+      "revenue_orders": 12570,
+      "revenue_buyouts": 11140,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 2010,
+      "logistics": 580,
+      "commissions": 330,
+      "penalties": 30,
+      "other_costs": 70,
+      "net_revenue": 8120,
+      "margin": 72.9
+    },
+    {
+      "date": "2026-05-20",
+      "channel": "Wildberries",
+      "revenue_orders": 224520,
+      "revenue_buyouts": 172170,
+      "orders_count": 142,
+      "buyouts_count": 111,
+      "ad_spend": 34800,
+      "logistics": 12480,
+      "commissions": 31050,
+      "penalties": 2070,
+      "other_costs": 1720,
+      "net_revenue": 90050,
+      "margin": 52.3
+    },
+    {
+      "date": "2026-05-20",
+      "channel": "Ozon",
+      "revenue_orders": 72350,
+      "revenue_buyouts": 58130,
+      "orders_count": 45,
+      "buyouts_count": 36,
+      "ad_spend": 11120,
+      "logistics": 4470,
+      "commissions": 9450,
+      "penalties": 580,
+      "other_costs": 580,
+      "net_revenue": 31930,
+      "margin": 54.9
+    },
+    {
+      "date": "2026-05-20",
+      "channel": "Site",
+      "revenue_orders": 69030,
+      "revenue_buyouts": 60320,
+      "orders_count": 32,
+      "buyouts_count": 29,
+      "ad_spend": 7130,
+      "logistics": 2870,
+      "commissions": 1790,
+      "penalties": 60,
+      "other_costs": 360,
+      "net_revenue": 48110,
+      "margin": 79.8
+    },
+    {
+      "date": "2026-05-20",
+      "channel": "Clinics",
+      "revenue_orders": 38100,
+      "revenue_buyouts": 37030,
+      "orders_count": 10,
+      "buyouts_count": 10,
+      "ad_spend": 2030,
+      "logistics": 670,
+      "commissions": 730,
+      "penalties": 0,
+      "other_costs": 150,
+      "net_revenue": 33450,
+      "margin": 90.3
+    },
+    {
+      "date": "2026-05-20",
+      "channel": "VK",
+      "revenue_orders": 19490,
+      "revenue_buyouts": 17070,
+      "orders_count": 10,
+      "buyouts_count": 9,
+      "ad_spend": 3450,
+      "logistics": 930,
+      "commissions": 520,
+      "penalties": 50,
+      "other_costs": 100,
+      "net_revenue": 12020,
+      "margin": 70.4
+    },
+    {
+      "date": "2026-05-20",
+      "channel": "YouTube",
+      "revenue_orders": 12160,
+      "revenue_buyouts": 9700,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 1900,
+      "logistics": 520,
+      "commissions": 300,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 6890,
+      "margin": 71.0
+    },
+    {
+      "date": "2026-05-21",
+      "channel": "Wildberries",
+      "revenue_orders": 157250,
+      "revenue_buyouts": 125850,
+      "orders_count": 104,
+      "buyouts_count": 81,
+      "ad_spend": 25880,
+      "logistics": 8550,
+      "commissions": 22590,
+      "penalties": 1510,
+      "other_costs": 1260,
+      "net_revenue": 66060,
+      "margin": 52.5
+    },
+    {
+      "date": "2026-05-21",
+      "channel": "Ozon",
+      "revenue_orders": 71950,
+      "revenue_buyouts": 57240,
+      "orders_count": 44,
+      "buyouts_count": 35,
+      "ad_spend": 9320,
+      "logistics": 4140,
+      "commissions": 9430,
+      "penalties": 570,
+      "other_costs": 570,
+      "net_revenue": 33210,
+      "margin": 58.0
+    },
+    {
+      "date": "2026-05-21",
+      "channel": "Site",
+      "revenue_orders": 59600,
+      "revenue_buyouts": 55420,
+      "orders_count": 28,
+      "buyouts_count": 26,
+      "ad_spend": 6830,
+      "logistics": 3040,
+      "commissions": 1690,
+      "penalties": 60,
+      "other_costs": 330,
+      "net_revenue": 43470,
+      "margin": 78.4
+    },
+    {
+      "date": "2026-05-21",
+      "channel": "Clinics",
+      "revenue_orders": 33710,
+      "revenue_buyouts": 34610,
+      "orders_count": 9,
+      "buyouts_count": 9,
+      "ad_spend": 1850,
+      "logistics": 750,
+      "commissions": 700,
+      "penalties": 0,
+      "other_costs": 140,
+      "net_revenue": 31170,
+      "margin": 90.1
+    },
+    {
+      "date": "2026-05-21",
+      "channel": "VK",
+      "revenue_orders": 17080,
+      "revenue_buyouts": 14780,
+      "orders_count": 9,
+      "buyouts_count": 8,
+      "ad_spend": 3500,
+      "logistics": 720,
+      "commissions": 440,
+      "penalties": 40,
+      "other_costs": 90,
+      "net_revenue": 9990,
+      "margin": 67.6
+    },
+    {
+      "date": "2026-05-21",
+      "channel": "YouTube",
+      "revenue_orders": 13730,
+      "revenue_buyouts": 11690,
+      "orders_count": 8,
+      "buyouts_count": 7,
+      "ad_spend": 2570,
+      "logistics": 620,
+      "commissions": 360,
+      "penalties": 40,
+      "other_costs": 70,
+      "net_revenue": 8030,
+      "margin": 68.7
+    },
+    {
+      "date": "2026-05-22",
+      "channel": "Wildberries",
+      "revenue_orders": 186920,
+      "revenue_buyouts": 144730,
+      "orders_count": 119,
+      "buyouts_count": 93,
+      "ad_spend": 30400,
+      "logistics": 10370,
+      "commissions": 26350,
+      "penalties": 1740,
+      "other_costs": 1450,
+      "net_revenue": 74420,
+      "margin": 51.4
+    },
+    {
+      "date": "2026-05-22",
+      "channel": "Ozon",
+      "revenue_orders": 70540,
+      "revenue_buyouts": 57440,
+      "orders_count": 44,
+      "buyouts_count": 35,
+      "ad_spend": 10020,
+      "logistics": 4260,
+      "commissions": 9050,
+      "penalties": 570,
+      "other_costs": 570,
+      "net_revenue": 32970,
+      "margin": 57.4
+    },
+    {
+      "date": "2026-05-22",
+      "channel": "Site",
+      "revenue_orders": 67460,
+      "revenue_buyouts": 62040,
+      "orders_count": 33,
+      "buyouts_count": 30,
+      "ad_spend": 7820,
+      "logistics": 3070,
+      "commissions": 1860,
+      "penalties": 60,
+      "other_costs": 370,
+      "net_revenue": 48860,
+      "margin": 78.8
+    },
+    {
+      "date": "2026-05-22",
+      "channel": "Clinics",
+      "revenue_orders": 35170,
+      "revenue_buyouts": 34910,
+      "orders_count": 9,
+      "buyouts_count": 9,
+      "ad_spend": 1820,
+      "logistics": 700,
+      "commissions": 710,
+      "penalties": 0,
+      "other_costs": 140,
+      "net_revenue": 31540,
+      "margin": 90.3
+    },
+    {
+      "date": "2026-05-22",
+      "channel": "VK",
+      "revenue_orders": 18750,
+      "revenue_buyouts": 17270,
+      "orders_count": 10,
+      "buyouts_count": 9,
+      "ad_spend": 3910,
+      "logistics": 890,
+      "commissions": 520,
+      "penalties": 50,
+      "other_costs": 100,
+      "net_revenue": 11800,
+      "margin": 68.3
+    },
+    {
+      "date": "2026-05-22",
+      "channel": "YouTube",
+      "revenue_orders": 12220,
+      "revenue_buyouts": 10270,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 2230,
+      "logistics": 540,
+      "commissions": 310,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 7100,
+      "margin": 69.1
+    },
+    {
+      "date": "2026-05-23",
+      "channel": "Wildberries",
+      "revenue_orders": 147940,
+      "revenue_buyouts": 116620,
+      "orders_count": 96,
+      "buyouts_count": 75,
+      "ad_spend": 23230,
+      "logistics": 7660,
+      "commissions": 20420,
+      "penalties": 1400,
+      "other_costs": 1170,
+      "net_revenue": 62740,
+      "margin": 53.8
+    },
+    {
+      "date": "2026-05-23",
+      "channel": "Ozon",
+      "revenue_orders": 84960,
+      "revenue_buyouts": 67380,
+      "orders_count": 52,
+      "buyouts_count": 42,
+      "ad_spend": 11670,
+      "logistics": 4610,
+      "commissions": 10490,
+      "penalties": 670,
+      "other_costs": 670,
+      "net_revenue": 39270,
+      "margin": 58.3
+    },
+    {
+      "date": "2026-05-23",
+      "channel": "Site",
+      "revenue_orders": 58440,
+      "revenue_buyouts": 54510,
+      "orders_count": 28,
+      "buyouts_count": 26,
+      "ad_spend": 5940,
+      "logistics": 2640,
+      "commissions": 1620,
+      "penalties": 50,
+      "other_costs": 330,
+      "net_revenue": 43930,
+      "margin": 80.6
+    },
+    {
+      "date": "2026-05-23",
+      "channel": "Clinics",
+      "revenue_orders": 30010,
+      "revenue_buyouts": 31310,
+      "orders_count": 8,
+      "buyouts_count": 8,
+      "ad_spend": 1600,
+      "logistics": 680,
+      "commissions": 610,
+      "penalties": 0,
+      "other_costs": 130,
+      "net_revenue": 28290,
+      "margin": 90.4
+    },
+    {
+      "date": "2026-05-23",
+      "channel": "VK",
+      "revenue_orders": 15420,
+      "revenue_buyouts": 13670,
+      "orders_count": 8,
+      "buyouts_count": 7,
+      "ad_spend": 2950,
+      "logistics": 710,
+      "commissions": 400,
+      "penalties": 40,
+      "other_costs": 80,
+      "net_revenue": 9490,
+      "margin": 69.4
+    },
+    {
+      "date": "2026-05-23",
+      "channel": "YouTube",
+      "revenue_orders": 10800,
+      "revenue_buyouts": 9550,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 1820,
+      "logistics": 440,
+      "commissions": 280,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 6920,
+      "margin": 72.5
+    },
+    {
+      "date": "2026-05-24",
+      "channel": "Wildberries",
+      "revenue_orders": 143100,
+      "revenue_buyouts": 115300,
+      "orders_count": 95,
+      "buyouts_count": 74,
+      "ad_spend": 22640,
+      "logistics": 7330,
+      "commissions": 20610,
+      "penalties": 1380,
+      "other_costs": 1150,
+      "net_revenue": 62190,
+      "margin": 53.9
+    },
+    {
+      "date": "2026-05-24",
+      "channel": "Ozon",
+      "revenue_orders": 76350,
+      "revenue_buyouts": 60050,
+      "orders_count": 46,
+      "buyouts_count": 37,
+      "ad_spend": 9760,
+      "logistics": 4480,
+      "commissions": 9670,
+      "penalties": 600,
+      "other_costs": 600,
+      "net_revenue": 34940,
+      "margin": 58.2
+    },
+    {
+      "date": "2026-05-24",
+      "channel": "Site",
+      "revenue_orders": 45270,
+      "revenue_buyouts": 40290,
+      "orders_count": 21,
+      "buyouts_count": 19,
+      "ad_spend": 5570,
+      "logistics": 2190,
+      "commissions": 1220,
+      "penalties": 40,
+      "other_costs": 240,
+      "net_revenue": 31030,
+      "margin": 77.0
+    },
+    {
+      "date": "2026-05-24",
+      "channel": "Clinics",
+      "revenue_orders": 38520,
+      "revenue_buyouts": 36520,
+      "orders_count": 10,
+      "buyouts_count": 10,
+      "ad_spend": 1880,
+      "logistics": 720,
+      "commissions": 750,
+      "penalties": 0,
+      "other_costs": 150,
+      "net_revenue": 33020,
+      "margin": 90.4
+    },
+    {
+      "date": "2026-05-24",
+      "channel": "VK",
+      "revenue_orders": 15550,
+      "revenue_buyouts": 12960,
+      "orders_count": 8,
+      "buyouts_count": 7,
+      "ad_spend": 3010,
+      "logistics": 620,
+      "commissions": 380,
+      "penalties": 40,
+      "other_costs": 80,
+      "net_revenue": 8830,
+      "margin": 68.1
+    },
+    {
+      "date": "2026-05-24",
+      "channel": "YouTube",
+      "revenue_orders": 8750,
+      "revenue_buyouts": 7600,
+      "orders_count": 5,
+      "buyouts_count": 4,
+      "ad_spend": 1660,
+      "logistics": 390,
+      "commissions": 220,
+      "penalties": 20,
+      "other_costs": 50,
+      "net_revenue": 5260,
+      "margin": 69.2
+    },
+    {
+      "date": "2026-05-25",
+      "channel": "Wildberries",
+      "revenue_orders": 181820,
+      "revenue_buyouts": 141370,
+      "orders_count": 117,
+      "buyouts_count": 91,
+      "ad_spend": 24740,
+      "logistics": 9420,
+      "commissions": 25750,
+      "penalties": 1700,
+      "other_costs": 1410,
+      "net_revenue": 78350,
+      "margin": 55.4
+    },
+    {
+      "date": "2026-05-25",
+      "channel": "Ozon",
+      "revenue_orders": 84940,
+      "revenue_buyouts": 68770,
+      "orders_count": 52,
+      "buyouts_count": 42,
+      "ad_spend": 12070,
+      "logistics": 4940,
+      "commissions": 11110,
+      "penalties": 690,
+      "other_costs": 690,
+      "net_revenue": 39270,
+      "margin": 57.1
+    },
+    {
+      "date": "2026-05-25",
+      "channel": "Site",
+      "revenue_orders": 58230,
+      "revenue_buyouts": 54730,
+      "orders_count": 28,
+      "buyouts_count": 26,
+      "ad_spend": 6810,
+      "logistics": 2780,
+      "commissions": 1640,
+      "penalties": 50,
+      "other_costs": 330,
+      "net_revenue": 43120,
+      "margin": 78.8
+    },
+    {
+      "date": "2026-05-25",
+      "channel": "Clinics",
+      "revenue_orders": 33980,
+      "revenue_buyouts": 34370,
+      "orders_count": 9,
+      "buyouts_count": 9,
+      "ad_spend": 1560,
+      "logistics": 710,
+      "commissions": 690,
+      "penalties": 0,
+      "other_costs": 140,
+      "net_revenue": 31270,
+      "margin": 91.0
+    },
+    {
+      "date": "2026-05-25",
+      "channel": "VK",
+      "revenue_orders": 19460,
+      "revenue_buyouts": 17010,
+      "orders_count": 10,
+      "buyouts_count": 9,
+      "ad_spend": 3460,
+      "logistics": 830,
+      "commissions": 530,
+      "penalties": 50,
+      "other_costs": 100,
+      "net_revenue": 12040,
+      "margin": 70.8
+    },
+    {
+      "date": "2026-05-25",
+      "channel": "YouTube",
+      "revenue_orders": 12580,
+      "revenue_buyouts": 10490,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 2130,
+      "logistics": 500,
+      "commissions": 320,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 7450,
+      "margin": 71.0
+    },
+    {
+      "date": "2026-05-26",
+      "channel": "Wildberries",
+      "revenue_orders": 214150,
+      "revenue_buyouts": 170930,
+      "orders_count": 141,
+      "buyouts_count": 110,
+      "ad_spend": 29250,
+      "logistics": 11440,
+      "commissions": 30530,
+      "penalties": 2050,
+      "other_costs": 1710,
+      "net_revenue": 95950,
+      "margin": 56.1
+    },
+    {
+      "date": "2026-05-26",
+      "channel": "Ozon",
+      "revenue_orders": 97890,
+      "revenue_buyouts": 76680,
+      "orders_count": 59,
+      "buyouts_count": 47,
+      "ad_spend": 14320,
+      "logistics": 5890,
+      "commissions": 12580,
+      "penalties": 770,
+      "other_costs": 770,
+      "net_revenue": 42350,
+      "margin": 55.2
+    },
+    {
+      "date": "2026-05-26",
+      "channel": "Site",
+      "revenue_orders": 47590,
+      "revenue_buyouts": 43870,
+      "orders_count": 23,
+      "buyouts_count": 21,
+      "ad_spend": 5730,
+      "logistics": 2190,
+      "commissions": 1280,
+      "penalties": 40,
+      "other_costs": 260,
+      "net_revenue": 34370,
+      "margin": 78.3
+    },
+    {
+      "date": "2026-05-26",
+      "channel": "Clinics",
+      "revenue_orders": 38410,
+      "revenue_buyouts": 39170,
+      "orders_count": 10,
+      "buyouts_count": 10,
+      "ad_spend": 1740,
+      "logistics": 760,
+      "commissions": 790,
+      "penalties": 0,
+      "other_costs": 160,
+      "net_revenue": 35720,
+      "margin": 91.2
+    },
+    {
+      "date": "2026-05-26",
+      "channel": "VK",
+      "revenue_orders": 23480,
+      "revenue_buyouts": 20420,
+      "orders_count": 12,
+      "buyouts_count": 11,
+      "ad_spend": 4940,
+      "logistics": 1080,
+      "commissions": 610,
+      "penalties": 60,
+      "other_costs": 120,
+      "net_revenue": 13610,
+      "margin": 66.7
+    },
+    {
+      "date": "2026-05-26",
+      "channel": "YouTube",
+      "revenue_orders": 10290,
+      "revenue_buyouts": 8450,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 1790,
+      "logistics": 460,
+      "commissions": 250,
+      "penalties": 30,
+      "other_costs": 50,
+      "net_revenue": 5870,
+      "margin": 69.5
+    },
+    {
+      "date": "2026-05-27",
+      "channel": "Wildberries",
+      "revenue_orders": 186000,
+      "revenue_buyouts": 145280,
+      "orders_count": 121,
+      "buyouts_count": 94,
+      "ad_spend": 26980,
+      "logistics": 10250,
+      "commissions": 26410,
+      "penalties": 1740,
+      "other_costs": 1450,
+      "net_revenue": 78450,
+      "margin": 54.0
+    },
+    {
+      "date": "2026-05-27",
+      "channel": "Ozon",
+      "revenue_orders": 87940,
+      "revenue_buyouts": 69970,
+      "orders_count": 54,
+      "buyouts_count": 43,
+      "ad_spend": 12390,
+      "logistics": 4910,
+      "commissions": 10880,
+      "penalties": 700,
+      "other_costs": 700,
+      "net_revenue": 40390,
+      "margin": 57.7
+    },
+    {
+      "date": "2026-05-27",
+      "channel": "Site",
+      "revenue_orders": 49910,
+      "revenue_buyouts": 47010,
+      "orders_count": 24,
+      "buyouts_count": 22,
+      "ad_spend": 4950,
+      "logistics": 2500,
+      "commissions": 1410,
+      "penalties": 50,
+      "other_costs": 280,
+      "net_revenue": 37820,
+      "margin": 80.5
+    },
+    {
+      "date": "2026-05-27",
+      "channel": "Clinics",
+      "revenue_orders": 40710,
+      "revenue_buyouts": 42580,
+      "orders_count": 11,
+      "buyouts_count": 11,
+      "ad_spend": 1970,
+      "logistics": 820,
+      "commissions": 830,
+      "penalties": 0,
+      "other_costs": 170,
+      "net_revenue": 38790,
+      "margin": 91.1
+    },
+    {
+      "date": "2026-05-27",
+      "channel": "VK",
+      "revenue_orders": 20350,
+      "revenue_buyouts": 19620,
+      "orders_count": 11,
+      "buyouts_count": 10,
+      "ad_spend": 4220,
+      "logistics": 1070,
+      "commissions": 600,
+      "penalties": 60,
+      "other_costs": 120,
+      "net_revenue": 13550,
+      "margin": 69.1
+    },
+    {
+      "date": "2026-05-27",
+      "channel": "YouTube",
+      "revenue_orders": 12140,
+      "revenue_buyouts": 10850,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 1980,
+      "logistics": 490,
+      "commissions": 330,
+      "penalties": 30,
+      "other_costs": 70,
+      "net_revenue": 7950,
+      "margin": 73.3
+    },
+    {
+      "date": "2026-05-28",
+      "channel": "Wildberries",
+      "revenue_orders": 165890,
+      "revenue_buyouts": 132120,
+      "orders_count": 109,
+      "buyouts_count": 85,
+      "ad_spend": 26570,
+      "logistics": 9490,
+      "commissions": 24010,
+      "penalties": 1590,
+      "other_costs": 1320,
+      "net_revenue": 69140,
+      "margin": 52.3
+    },
+    {
+      "date": "2026-05-28",
+      "channel": "Ozon",
+      "revenue_orders": 81720,
+      "revenue_buyouts": 64040,
+      "orders_count": 50,
+      "buyouts_count": 40,
+      "ad_spend": 12270,
+      "logistics": 4400,
+      "commissions": 10070,
+      "penalties": 640,
+      "other_costs": 640,
+      "net_revenue": 36020,
+      "margin": 56.2
+    },
+    {
+      "date": "2026-05-28",
+      "channel": "Site",
+      "revenue_orders": 49640,
+      "revenue_buyouts": 47010,
+      "orders_count": 24,
+      "buyouts_count": 22,
+      "ad_spend": 5170,
+      "logistics": 2520,
+      "commissions": 1380,
+      "penalties": 50,
+      "other_costs": 280,
+      "net_revenue": 37610,
+      "margin": 80.0
+    },
+    {
+      "date": "2026-05-28",
+      "channel": "Clinics",
+      "revenue_orders": 40620,
+      "revenue_buyouts": 40510,
+      "orders_count": 11,
+      "buyouts_count": 11,
+      "ad_spend": 2130,
+      "logistics": 810,
+      "commissions": 790,
+      "penalties": 0,
+      "other_costs": 160,
+      "net_revenue": 36620,
+      "margin": 90.4
+    },
+    {
+      "date": "2026-05-28",
+      "channel": "VK",
+      "revenue_orders": 20590,
+      "revenue_buyouts": 19950,
+      "orders_count": 11,
+      "buyouts_count": 10,
+      "ad_spend": 4160,
+      "logistics": 1020,
+      "commissions": 590,
+      "penalties": 60,
+      "other_costs": 120,
+      "net_revenue": 14000,
+      "margin": 70.2
+    },
+    {
+      "date": "2026-05-28",
+      "channel": "YouTube",
+      "revenue_orders": 12450,
+      "revenue_buyouts": 10480,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 1960,
+      "logistics": 570,
+      "commissions": 310,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 7550,
+      "margin": 72.0
+    },
+    {
+      "date": "2026-05-29",
+      "channel": "Wildberries",
+      "revenue_orders": 214410,
+      "revenue_buyouts": 166430,
+      "orders_count": 137,
+      "buyouts_count": 107,
+      "ad_spend": 30230,
+      "logistics": 11800,
+      "commissions": 30650,
+      "penalties": 2000,
+      "other_costs": 1660,
+      "net_revenue": 90090,
+      "margin": 54.1
+    },
+    {
+      "date": "2026-05-29",
+      "channel": "Ozon",
+      "revenue_orders": 86410,
+      "revenue_buyouts": 68950,
+      "orders_count": 54,
+      "buyouts_count": 43,
+      "ad_spend": 12220,
+      "logistics": 4610,
+      "commissions": 10720,
+      "penalties": 690,
+      "other_costs": 690,
+      "net_revenue": 40020,
+      "margin": 58.0
+    },
+    {
+      "date": "2026-05-29",
+      "channel": "Site",
+      "revenue_orders": 56090,
+      "revenue_buyouts": 50440,
+      "orders_count": 26,
+      "buyouts_count": 24,
+      "ad_spend": 5850,
+      "logistics": 2630,
+      "commissions": 1530,
+      "penalties": 50,
+      "other_costs": 300,
+      "net_revenue": 40080,
+      "margin": 79.5
+    },
+    {
+      "date": "2026-05-29",
+      "channel": "Clinics",
+      "revenue_orders": 46320,
+      "revenue_buyouts": 45210,
+      "orders_count": 12,
+      "buyouts_count": 12,
+      "ad_spend": 2390,
+      "logistics": 900,
+      "commissions": 920,
+      "penalties": 0,
+      "other_costs": 180,
+      "net_revenue": 40820,
+      "margin": 90.3
+    },
+    {
+      "date": "2026-05-29",
+      "channel": "VK",
+      "revenue_orders": 17190,
+      "revenue_buyouts": 15210,
+      "orders_count": 9,
+      "buyouts_count": 8,
+      "ad_spend": 3170,
+      "logistics": 810,
+      "commissions": 460,
+      "penalties": 50,
+      "other_costs": 90,
+      "net_revenue": 10630,
+      "margin": 69.9
+    },
+    {
+      "date": "2026-05-29",
+      "channel": "YouTube",
+      "revenue_orders": 12360,
+      "revenue_buyouts": 10180,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 1910,
+      "logistics": 540,
+      "commissions": 310,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 7330,
+      "margin": 72.0
+    },
+    {
+      "date": "2026-05-30",
+      "channel": "Wildberries",
+      "revenue_orders": 166540,
+      "revenue_buyouts": 131080,
+      "orders_count": 109,
+      "buyouts_count": 85,
+      "ad_spend": 25350,
+      "logistics": 9400,
+      "commissions": 23250,
+      "penalties": 1570,
+      "other_costs": 1310,
+      "net_revenue": 70200,
+      "margin": 53.6
+    },
+    {
+      "date": "2026-05-30",
+      "channel": "Ozon",
+      "revenue_orders": 85840,
+      "revenue_buyouts": 68260,
+      "orders_count": 52,
+      "buyouts_count": 42,
+      "ad_spend": 12020,
+      "logistics": 4730,
+      "commissions": 10740,
+      "penalties": 680,
+      "other_costs": 680,
+      "net_revenue": 39410,
+      "margin": 57.7
+    },
+    {
+      "date": "2026-05-30",
+      "channel": "Site",
+      "revenue_orders": 43150,
+      "revenue_buyouts": 39900,
+      "orders_count": 21,
+      "buyouts_count": 19,
+      "ad_spend": 5040,
+      "logistics": 2150,
+      "commissions": 1210,
+      "penalties": 40,
+      "other_costs": 240,
+      "net_revenue": 31220,
+      "margin": 78.2
+    },
+    {
+      "date": "2026-05-30",
+      "channel": "Clinics",
+      "revenue_orders": 37580,
+      "revenue_buyouts": 38570,
+      "orders_count": 10,
+      "buyouts_count": 10,
+      "ad_spend": 1880,
+      "logistics": 800,
+      "commissions": 760,
+      "penalties": 0,
+      "other_costs": 150,
+      "net_revenue": 34980,
+      "margin": 90.7
+    },
+    {
+      "date": "2026-05-30",
+      "channel": "VK",
+      "revenue_orders": 19030,
+      "revenue_buyouts": 17670,
+      "orders_count": 10,
+      "buyouts_count": 9,
+      "ad_spend": 3590,
+      "logistics": 930,
+      "commissions": 530,
+      "penalties": 50,
+      "other_costs": 110,
+      "net_revenue": 12460,
+      "margin": 70.5
+    },
+    {
+      "date": "2026-05-30",
+      "channel": "YouTube",
+      "revenue_orders": 10340,
+      "revenue_buyouts": 8010,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 1840,
+      "logistics": 360,
+      "commissions": 240,
+      "penalties": 20,
+      "other_costs": 50,
+      "net_revenue": 5500,
+      "margin": 68.7
+    },
+    {
+      "date": "2026-05-31",
+      "channel": "Wildberries",
+      "revenue_orders": 160670,
+      "revenue_buyouts": 127140,
+      "orders_count": 105,
+      "buyouts_count": 82,
+      "ad_spend": 24070,
+      "logistics": 8170,
+      "commissions": 22300,
+      "penalties": 1530,
+      "other_costs": 1270,
+      "net_revenue": 69800,
+      "margin": 54.9
+    },
+    {
+      "date": "2026-05-31",
+      "channel": "Ozon",
+      "revenue_orders": 74040,
+      "revenue_buyouts": 60190,
+      "orders_count": 46,
+      "buyouts_count": 37,
+      "ad_spend": 11110,
+      "logistics": 4380,
+      "commissions": 9490,
+      "penalties": 600,
+      "other_costs": 600,
+      "net_revenue": 34010,
+      "margin": 56.5
+    },
+    {
+      "date": "2026-05-31",
+      "channel": "Site",
+      "revenue_orders": 53410,
+      "revenue_buyouts": 47540,
+      "orders_count": 25,
+      "buyouts_count": 23,
+      "ad_spend": 6150,
+      "logistics": 2280,
+      "commissions": 1400,
+      "penalties": 50,
+      "other_costs": 290,
+      "net_revenue": 37370,
+      "margin": 78.6
+    },
+    {
+      "date": "2026-05-31",
+      "channel": "Clinics",
+      "revenue_orders": 30330,
+      "revenue_buyouts": 31010,
+      "orders_count": 8,
+      "buyouts_count": 8,
+      "ad_spend": 1370,
+      "logistics": 570,
+      "commissions": 620,
+      "penalties": 0,
+      "other_costs": 120,
+      "net_revenue": 28330,
+      "margin": 91.4
+    },
+    {
+      "date": "2026-05-31",
+      "channel": "VK",
+      "revenue_orders": 17430,
+      "revenue_buyouts": 14270,
+      "orders_count": 9,
+      "buyouts_count": 8,
+      "ad_spend": 3580,
+      "logistics": 710,
+      "commissions": 430,
+      "penalties": 40,
+      "other_costs": 90,
+      "net_revenue": 9420,
+      "margin": 66.0
+    },
+    {
+      "date": "2026-05-31",
+      "channel": "YouTube",
+      "revenue_orders": 10420,
+      "revenue_buyouts": 8880,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 1810,
+      "logistics": 460,
+      "commissions": 260,
+      "penalties": 30,
+      "other_costs": 50,
+      "net_revenue": 6270,
+      "margin": 70.6
+    },
+    {
+      "date": "2026-06-01",
+      "channel": "Wildberries",
+      "revenue_orders": 190560,
+      "revenue_buyouts": 152380,
+      "orders_count": 126,
+      "buyouts_count": 98,
+      "ad_spend": 30900,
+      "logistics": 9810,
+      "commissions": 28190,
+      "penalties": 1830,
+      "other_costs": 1520,
+      "net_revenue": 80130,
+      "margin": 52.6
+    },
+    {
+      "date": "2026-06-01",
+      "channel": "Ozon",
+      "revenue_orders": 79790,
+      "revenue_buyouts": 63000,
+      "orders_count": 49,
+      "buyouts_count": 39,
+      "ad_spend": 10340,
+      "logistics": 4590,
+      "commissions": 9790,
+      "penalties": 630,
+      "other_costs": 630,
+      "net_revenue": 37020,
+      "margin": 58.8
+    },
+    {
+      "date": "2026-06-01",
+      "channel": "Site",
+      "revenue_orders": 43390,
+      "revenue_buyouts": 39530,
+      "orders_count": 21,
+      "buyouts_count": 19,
+      "ad_spend": 4640,
+      "logistics": 1860,
+      "commissions": 1160,
+      "penalties": 40,
+      "other_costs": 240,
+      "net_revenue": 31590,
+      "margin": 79.9
+    },
+    {
+      "date": "2026-06-01",
+      "channel": "Clinics",
+      "revenue_orders": 33570,
+      "revenue_buyouts": 33860,
+      "orders_count": 9,
+      "buyouts_count": 9,
+      "ad_spend": 1540,
+      "logistics": 670,
+      "commissions": 700,
+      "penalties": 0,
+      "other_costs": 140,
+      "net_revenue": 30810,
+      "margin": 91.0
+    },
+    {
+      "date": "2026-06-01",
+      "channel": "VK",
+      "revenue_orders": 11650,
+      "revenue_buyouts": 8980,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 2320,
+      "logistics": 460,
+      "commissions": 270,
+      "penalties": 30,
+      "other_costs": 50,
+      "net_revenue": 5850,
+      "margin": 65.1
+    },
+    {
+      "date": "2026-06-01",
+      "channel": "YouTube",
+      "revenue_orders": 9000,
+      "revenue_buyouts": 6840,
+      "orders_count": 5,
+      "buyouts_count": 4,
+      "ad_spend": 1390,
+      "logistics": 360,
+      "commissions": 210,
+      "penalties": 20,
+      "other_costs": 40,
+      "net_revenue": 4820,
+      "margin": 70.5
+    },
+    {
+      "date": "2026-06-02",
+      "channel": "Wildberries",
+      "revenue_orders": 182080,
+      "revenue_buyouts": 143350,
+      "orders_count": 118,
+      "buyouts_count": 92,
+      "ad_spend": 27050,
+      "logistics": 10860,
+      "commissions": 25820,
+      "penalties": 1720,
+      "other_costs": 1430,
+      "net_revenue": 76470,
+      "margin": 53.3
+    },
+    {
+      "date": "2026-06-02",
+      "channel": "Ozon",
+      "revenue_orders": 71380,
+      "revenue_buyouts": 56250,
+      "orders_count": 44,
+      "buyouts_count": 35,
+      "ad_spend": 9830,
+      "logistics": 3670,
+      "commissions": 8910,
+      "penalties": 560,
+      "other_costs": 560,
+      "net_revenue": 32720,
+      "margin": 58.2
+    },
+    {
+      "date": "2026-06-02",
+      "channel": "Site",
+      "revenue_orders": 45110,
+      "revenue_buyouts": 40820,
+      "orders_count": 21,
+      "buyouts_count": 19,
+      "ad_spend": 4730,
+      "logistics": 1940,
+      "commissions": 1250,
+      "penalties": 40,
+      "other_costs": 240,
+      "net_revenue": 32620,
+      "margin": 79.9
+    },
+    {
+      "date": "2026-06-02",
+      "channel": "Clinics",
+      "revenue_orders": 33480,
+      "revenue_buyouts": 34570,
+      "orders_count": 9,
+      "buyouts_count": 9,
+      "ad_spend": 1750,
+      "logistics": 680,
+      "commissions": 690,
+      "penalties": 0,
+      "other_costs": 140,
+      "net_revenue": 31310,
+      "margin": 90.6
+    },
+    {
+      "date": "2026-06-02",
+      "channel": "VK",
+      "revenue_orders": 11290,
+      "revenue_buyouts": 8750,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 2170,
+      "logistics": 460,
+      "commissions": 270,
+      "penalties": 30,
+      "other_costs": 50,
+      "net_revenue": 5770,
+      "margin": 65.9
+    },
+    {
+      "date": "2026-06-02",
+      "channel": "YouTube",
+      "revenue_orders": 7170,
+      "revenue_buyouts": 5820,
+      "orders_count": 4,
+      "buyouts_count": 3,
+      "ad_spend": 1300,
+      "logistics": 270,
+      "commissions": 180,
+      "penalties": 20,
+      "other_costs": 30,
+      "net_revenue": 4020,
+      "margin": 69.1
+    },
+    {
+      "date": "2026-06-03",
+      "channel": "Wildberries",
+      "revenue_orders": 189300,
+      "revenue_buyouts": 146990,
+      "orders_count": 122,
+      "buyouts_count": 95,
+      "ad_spend": 30940,
+      "logistics": 10280,
+      "commissions": 26440,
+      "penalties": 1760,
+      "other_costs": 1470,
+      "net_revenue": 76100,
+      "margin": 51.8
+    },
+    {
+      "date": "2026-06-03",
+      "channel": "Ozon",
+      "revenue_orders": 98020,
+      "revenue_buyouts": 76160,
+      "orders_count": 59,
+      "buyouts_count": 47,
+      "ad_spend": 12950,
+      "logistics": 5100,
+      "commissions": 12090,
+      "penalties": 760,
+      "other_costs": 760,
+      "net_revenue": 44500,
+      "margin": 58.4
+    },
+    {
+      "date": "2026-06-03",
+      "channel": "Site",
+      "revenue_orders": 41130,
+      "revenue_buyouts": 37940,
+      "orders_count": 20,
+      "buyouts_count": 18,
+      "ad_spend": 4990,
+      "logistics": 1750,
+      "commissions": 1130,
+      "penalties": 40,
+      "other_costs": 230,
+      "net_revenue": 29800,
+      "margin": 78.5
+    },
+    {
+      "date": "2026-06-03",
+      "channel": "Clinics",
+      "revenue_orders": 42330,
+      "revenue_buyouts": 41650,
+      "orders_count": 11,
+      "buyouts_count": 11,
+      "ad_spend": 1940,
+      "logistics": 890,
+      "commissions": 830,
+      "penalties": 0,
+      "other_costs": 170,
+      "net_revenue": 37820,
+      "margin": 90.8
+    },
+    {
+      "date": "2026-06-03",
+      "channel": "VK",
+      "revenue_orders": 11670,
+      "revenue_buyouts": 10250,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 2310,
+      "logistics": 490,
+      "commissions": 310,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 7050,
+      "margin": 68.8
+    },
+    {
+      "date": "2026-06-03",
+      "channel": "YouTube",
+      "revenue_orders": 8680,
+      "revenue_buyouts": 6760,
+      "orders_count": 5,
+      "buyouts_count": 4,
+      "ad_spend": 1640,
+      "logistics": 330,
+      "commissions": 210,
+      "penalties": 20,
+      "other_costs": 40,
+      "net_revenue": 4520,
+      "margin": 66.9
+    },
+    {
+      "date": "2026-06-04",
+      "channel": "Wildberries",
+      "revenue_orders": 163710,
+      "revenue_buyouts": 129340,
+      "orders_count": 106,
+      "buyouts_count": 83,
+      "ad_spend": 22420,
+      "logistics": 9150,
+      "commissions": 22650,
+      "penalties": 1550,
+      "other_costs": 1290,
+      "net_revenue": 72280,
+      "margin": 55.9
+    },
+    {
+      "date": "2026-06-04",
+      "channel": "Ozon",
+      "revenue_orders": 78360,
+      "revenue_buyouts": 63350,
+      "orders_count": 49,
+      "buyouts_count": 39,
+      "ad_spend": 10410,
+      "logistics": 4880,
+      "commissions": 9870,
+      "penalties": 630,
+      "other_costs": 630,
+      "net_revenue": 36930,
+      "margin": 58.3
+    },
+    {
+      "date": "2026-06-04",
+      "channel": "Site",
+      "revenue_orders": 41690,
+      "revenue_buyouts": 36790,
+      "orders_count": 20,
+      "buyouts_count": 18,
+      "ad_spend": 4890,
+      "logistics": 1930,
+      "commissions": 1080,
+      "penalties": 40,
+      "other_costs": 220,
+      "net_revenue": 28630,
+      "margin": 77.8
+    },
+    {
+      "date": "2026-06-04",
+      "channel": "Clinics",
+      "revenue_orders": 46600,
+      "revenue_buyouts": 46970,
+      "orders_count": 12,
+      "buyouts_count": 12,
+      "ad_spend": 2120,
+      "logistics": 930,
+      "commissions": 910,
+      "penalties": 0,
+      "other_costs": 190,
+      "net_revenue": 42820,
+      "margin": 91.2
+    },
+    {
+      "date": "2026-06-04",
+      "channel": "VK",
+      "revenue_orders": 11390,
+      "revenue_buyouts": 10440,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 2320,
+      "logistics": 480,
+      "commissions": 300,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 7250,
+      "margin": 69.4
+    },
+    {
+      "date": "2026-06-04",
+      "channel": "YouTube",
+      "revenue_orders": 8590,
+      "revenue_buyouts": 6140,
+      "orders_count": 5,
+      "buyouts_count": 4,
+      "ad_spend": 1390,
+      "logistics": 320,
+      "commissions": 180,
+      "penalties": 20,
+      "other_costs": 40,
+      "net_revenue": 4190,
+      "margin": 68.2
+    },
+    {
+      "date": "2026-06-05",
+      "channel": "Wildberries",
+      "revenue_orders": 161590,
+      "revenue_buyouts": 126200,
+      "orders_count": 104,
+      "buyouts_count": 81,
+      "ad_spend": 25400,
+      "logistics": 8820,
+      "commissions": 22460,
+      "penalties": 1510,
+      "other_costs": 1260,
+      "net_revenue": 66750,
+      "margin": 52.9
+    },
+    {
+      "date": "2026-06-05",
+      "channel": "Ozon",
+      "revenue_orders": 92800,
+      "revenue_buyouts": 74200,
+      "orders_count": 58,
+      "buyouts_count": 46,
+      "ad_spend": 13280,
+      "logistics": 5710,
+      "commissions": 12180,
+      "penalties": 740,
+      "other_costs": 740,
+      "net_revenue": 41550,
+      "margin": 56.0
+    },
+    {
+      "date": "2026-06-05",
+      "channel": "Site",
+      "revenue_orders": 55370,
+      "revenue_buyouts": 52220,
+      "orders_count": 27,
+      "buyouts_count": 25,
+      "ad_spend": 6410,
+      "logistics": 2850,
+      "commissions": 1600,
+      "penalties": 50,
+      "other_costs": 310,
+      "net_revenue": 41000,
+      "margin": 78.5
+    },
+    {
+      "date": "2026-06-05",
+      "channel": "Clinics",
+      "revenue_orders": 45460,
+      "revenue_buyouts": 44930,
+      "orders_count": 12,
+      "buyouts_count": 12,
+      "ad_spend": 2430,
+      "logistics": 890,
+      "commissions": 920,
+      "penalties": 0,
+      "other_costs": 180,
+      "net_revenue": 40510,
+      "margin": 90.2
+    },
+    {
+      "date": "2026-06-05",
+      "channel": "VK",
+      "revenue_orders": 11170,
+      "revenue_buyouts": 8760,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 2050,
+      "logistics": 420,
+      "commissions": 260,
+      "penalties": 30,
+      "other_costs": 50,
+      "net_revenue": 5950,
+      "margin": 67.9
+    },
+    {
+      "date": "2026-06-05",
+      "channel": "YouTube",
+      "revenue_orders": 8710,
+      "revenue_buyouts": 7840,
+      "orders_count": 5,
+      "buyouts_count": 4,
+      "ad_spend": 1410,
+      "logistics": 400,
+      "commissions": 230,
+      "penalties": 20,
+      "other_costs": 50,
+      "net_revenue": 5730,
+      "margin": 73.1
+    },
+    {
+      "date": "2026-06-06",
+      "channel": "Wildberries",
+      "revenue_orders": 190020,
+      "revenue_buyouts": 150090,
+      "orders_count": 124,
+      "buyouts_count": 97,
+      "ad_spend": 28330,
+      "logistics": 11400,
+      "commissions": 26540,
+      "penalties": 1800,
+      "other_costs": 1500,
+      "net_revenue": 80520,
+      "margin": 53.6
+    },
+    {
+      "date": "2026-06-06",
+      "channel": "Ozon",
+      "revenue_orders": 66370,
+      "revenue_buyouts": 51980,
+      "orders_count": 40,
+      "buyouts_count": 32,
+      "ad_spend": 8450,
+      "logistics": 3440,
+      "commissions": 8330,
+      "penalties": 520,
+      "other_costs": 520,
+      "net_revenue": 30720,
+      "margin": 59.1
+    },
+    {
+      "date": "2026-06-06",
+      "channel": "Site",
+      "revenue_orders": 42820,
+      "revenue_buyouts": 36980,
+      "orders_count": 20,
+      "buyouts_count": 18,
+      "ad_spend": 4550,
+      "logistics": 1670,
+      "commissions": 1130,
+      "penalties": 40,
+      "other_costs": 220,
+      "net_revenue": 29370,
+      "margin": 79.4
+    },
+    {
+      "date": "2026-06-06",
+      "channel": "Clinics",
+      "revenue_orders": 38780,
+      "revenue_buyouts": 36750,
+      "orders_count": 10,
+      "buyouts_count": 10,
+      "ad_spend": 1940,
+      "logistics": 760,
+      "commissions": 760,
+      "penalties": 0,
+      "other_costs": 150,
+      "net_revenue": 33140,
+      "margin": 90.2
+    },
+    {
+      "date": "2026-06-06",
+      "channel": "VK",
+      "revenue_orders": 9450,
+      "revenue_buyouts": 7920,
+      "orders_count": 5,
+      "buyouts_count": 4,
+      "ad_spend": 1650,
+      "logistics": 390,
+      "commissions": 240,
+      "penalties": 20,
+      "other_costs": 50,
+      "net_revenue": 5570,
+      "margin": 70.3
+    },
+    {
+      "date": "2026-06-06",
+      "channel": "YouTube",
+      "revenue_orders": 8840,
+      "revenue_buyouts": 6700,
+      "orders_count": 5,
+      "buyouts_count": 4,
+      "ad_spend": 1420,
+      "logistics": 370,
+      "commissions": 200,
+      "penalties": 20,
+      "other_costs": 40,
+      "net_revenue": 4650,
+      "margin": 69.4
+    },
+    {
+      "date": "2026-06-07",
+      "channel": "Wildberries",
+      "revenue_orders": 180360,
+      "revenue_buyouts": 139410,
+      "orders_count": 115,
+      "buyouts_count": 90,
+      "ad_spend": 24410,
+      "logistics": 10250,
+      "commissions": 25770,
+      "penalties": 1670,
+      "other_costs": 1390,
+      "net_revenue": 75920,
+      "margin": 54.5
+    },
+    {
+      "date": "2026-06-07",
+      "channel": "Ozon",
+      "revenue_orders": 79130,
+      "revenue_buyouts": 64660,
+      "orders_count": 50,
+      "buyouts_count": 40,
+      "ad_spend": 11880,
+      "logistics": 4290,
+      "commissions": 10460,
+      "penalties": 650,
+      "other_costs": 650,
+      "net_revenue": 36730,
+      "margin": 56.8
+    },
+    {
+      "date": "2026-06-07",
+      "channel": "Site",
+      "revenue_orders": 41560,
+      "revenue_buyouts": 38670,
+      "orders_count": 20,
+      "buyouts_count": 18,
+      "ad_spend": 4450,
+      "logistics": 1880,
+      "commissions": 1140,
+      "penalties": 40,
+      "other_costs": 230,
+      "net_revenue": 30930,
+      "margin": 80.0
+    },
+    {
+      "date": "2026-06-07",
+      "channel": "Clinics",
+      "revenue_orders": 30840,
+      "revenue_buyouts": 30770,
+      "orders_count": 8,
+      "buyouts_count": 8,
+      "ad_spend": 1690,
+      "logistics": 670,
+      "commissions": 630,
+      "penalties": 0,
+      "other_costs": 120,
+      "net_revenue": 27660,
+      "margin": 89.9
+    },
+    {
+      "date": "2026-06-07",
+      "channel": "VK",
+      "revenue_orders": 11640,
+      "revenue_buyouts": 9240,
+      "orders_count": 6,
+      "buyouts_count": 5,
+      "ad_spend": 2110,
+      "logistics": 490,
+      "commissions": 280,
+      "penalties": 30,
+      "other_costs": 60,
+      "net_revenue": 6270,
+      "margin": 67.9
+    },
+    {
+      "date": "2026-06-07",
+      "channel": "YouTube",
+      "revenue_orders": 7200,
+      "revenue_buyouts": 5910,
+      "orders_count": 4,
+      "buyouts_count": 3,
+      "ad_spend": 1280,
+      "logistics": 290,
+      "commissions": 170,
+      "penalties": 20,
+      "other_costs": 40,
+      "net_revenue": 4110,
+      "margin": 69.5
+    },
+    {
+      "date": "2026-06-08",
+      "channel": "Wildberries",
+      "revenue_orders": 162920,
+      "revenue_buyouts": 129780,
+      "orders_count": 108,
+      "buyouts_count": 84,
+      "ad_spend": 24370,
+      "logistics": 9840,
+      "commissions": 22850,
+      "penalties": 1560,
+      "other_costs": 1300,
+      "net_revenue": 69860,
+      "margin": 53.8
+    },
+    {
+      "date": "2026-06-08",
+      "channel": "Ozon",
+      "revenue_orders": 73330,
+      "revenue_buyouts": 60520,
+      "orders_count": 46,
+      "buyouts_count": 37,
+      "ad_spend": 10000,
+      "logistics": 4010,
+      "commissions": 9580,
+      "penalties": 610,
+      "other_costs": 610,
+      "net_revenue": 35710,
+      "margin": 59.0
+    },
+    {
+      "date": "2026-06-08",
+      "channel": "Site",
+      "revenue_orders": 52660,
+      "revenue_buyouts": 48560,
+      "orders_count": 25,
+      "buyouts_count": 23,
+      "ad_spend": 6440,
+      "logistics": 2340,
+      "commissions": 1450,
+      "penalties": 50,
+      "other_costs": 290,
+      "net_revenue": 37990,
+      "margin": 78.2
+    },
+    {
+      "date": "2026-06-08",
+      "channel": "Clinics",
+      "revenue_orders": 37790,
+      "revenue_buyouts": 39430,
+      "orders_count": 10,
+      "buyouts_count": 10,
+      "ad_spend": 2010,
+      "logistics": 770,
+      "commissions": 780,
+      "penalties": 0,
+      "other_costs": 160,
+      "net_revenue": 35710,
+      "margin": 90.6
+    },
+    {
+      "date": "2026-06-08",
+      "channel": "VK",
+      "revenue_orders": 13410,
+      "revenue_buyouts": 10950,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 2470,
+      "logistics": 570,
+      "commissions": 330,
+      "penalties": 30,
+      "other_costs": 70,
+      "net_revenue": 7480,
+      "margin": 68.3
+    },
+    {
+      "date": "2026-06-08",
+      "channel": "YouTube",
+      "revenue_orders": 8510,
+      "revenue_buyouts": 6370,
+      "orders_count": 5,
+      "buyouts_count": 4,
+      "ad_spend": 1600,
+      "logistics": 330,
+      "commissions": 190,
+      "penalties": 20,
+      "other_costs": 40,
+      "net_revenue": 4190,
+      "margin": 65.8
+    },
+    {
+      "date": "2026-06-09",
+      "channel": "Wildberries",
+      "revenue_orders": 154590,
+      "revenue_buyouts": 120950,
+      "orders_count": 100,
+      "buyouts_count": 78,
+      "ad_spend": 23370,
+      "logistics": 8260,
+      "commissions": 22060,
+      "penalties": 1450,
+      "other_costs": 1210,
+      "net_revenue": 64600,
+      "margin": 53.4
+    },
+    {
+      "date": "2026-06-09",
+      "channel": "Ozon",
+      "revenue_orders": 97160,
+      "revenue_buyouts": 76160,
+      "orders_count": 59,
+      "buyouts_count": 47,
+      "ad_spend": 13000,
+      "logistics": 5680,
+      "commissions": 12400,
+      "penalties": 760,
+      "other_costs": 760,
+      "net_revenue": 43560,
+      "margin": 57.2
+    },
+    {
+      "date": "2026-06-09",
+      "channel": "Site",
+      "revenue_orders": 50980,
+      "revenue_buyouts": 45700,
+      "orders_count": 24,
+      "buyouts_count": 22,
+      "ad_spend": 5290,
+      "logistics": 2150,
+      "commissions": 1390,
+      "penalties": 50,
+      "other_costs": 270,
+      "net_revenue": 36550,
+      "margin": 80.0
+    },
+    {
+      "date": "2026-06-09",
+      "channel": "Clinics",
+      "revenue_orders": 41230,
+      "revenue_buyouts": 41090,
+      "orders_count": 11,
+      "buyouts_count": 11,
+      "ad_spend": 2280,
+      "logistics": 830,
+      "commissions": 810,
+      "penalties": 0,
+      "other_costs": 160,
+      "net_revenue": 37010,
+      "margin": 90.1
+    },
+    {
+      "date": "2026-06-09",
+      "channel": "VK",
+      "revenue_orders": 9380,
+      "revenue_buyouts": 8420,
+      "orders_count": 5,
+      "buyouts_count": 4,
+      "ad_spend": 1650,
+      "logistics": 390,
+      "commissions": 250,
+      "penalties": 30,
+      "other_costs": 50,
+      "net_revenue": 6050,
+      "margin": 71.9
+    },
+    {
+      "date": "2026-06-09",
+      "channel": "YouTube",
+      "revenue_orders": 6800,
+      "revenue_buyouts": 5900,
+      "orders_count": 4,
+      "buyouts_count": 3,
+      "ad_spend": 1080,
+      "logistics": 290,
+      "commissions": 180,
+      "penalties": 20,
+      "other_costs": 40,
+      "net_revenue": 4290,
+      "margin": 72.7
+    },
+    {
+      "date": "2026-06-10",
+      "channel": "Wildberries",
+      "revenue_orders": 210410,
+      "revenue_buyouts": 167720,
+      "orders_count": 138,
+      "buyouts_count": 108,
+      "ad_spend": 32330,
+      "logistics": 11570,
+      "commissions": 29790,
+      "penalties": 2010,
+      "other_costs": 1680,
+      "net_revenue": 90340,
+      "margin": 53.9
+    },
+    {
+      "date": "2026-06-10",
+      "channel": "Ozon",
+      "revenue_orders": 93120,
+      "revenue_buyouts": 72170,
+      "orders_count": 56,
+      "buyouts_count": 45,
+      "ad_spend": 14080,
+      "logistics": 5350,
+      "commissions": 11560,
+      "penalties": 720,
+      "other_costs": 720,
+      "net_revenue": 39740,
+      "margin": 55.1
+    },
+    {
+      "date": "2026-06-10",
+      "channel": "Site",
+      "revenue_orders": 49700,
+      "revenue_buyouts": 43660,
+      "orders_count": 23,
+      "buyouts_count": 21,
+      "ad_spend": 5930,
+      "logistics": 2330,
+      "commissions": 1310,
+      "penalties": 40,
+      "other_costs": 260,
+      "net_revenue": 33790,
+      "margin": 77.4
+    },
+    {
+      "date": "2026-06-10",
+      "channel": "Clinics",
+      "revenue_orders": 38060,
+      "revenue_buyouts": 38040,
+      "orders_count": 10,
+      "buyouts_count": 10,
+      "ad_spend": 1880,
+      "logistics": 760,
+      "commissions": 750,
+      "penalties": 0,
+      "other_costs": 150,
+      "net_revenue": 34500,
+      "margin": 90.7
+    },
+    {
+      "date": "2026-06-10",
+      "channel": "VK",
+      "revenue_orders": 13180,
+      "revenue_buyouts": 11050,
+      "orders_count": 7,
+      "buyouts_count": 6,
+      "ad_spend": 2450,
+      "logistics": 530,
+      "commissions": 340,
+      "penalties": 30,
+      "other_costs": 70,
+      "net_revenue": 7630,
+      "margin": 69.0
+    },
+    {
+      "date": "2026-06-10",
+      "channel": "YouTube",
+      "revenue_orders": 8800,
+      "revenue_buyouts": 6260,
+      "orders_count": 5,
+      "buyouts_count": 4,
+      "ad_spend": 1390,
+      "logistics": 290,
+      "commissions": 190,
+      "penalties": 20,
+      "other_costs": 40,
+      "net_revenue": 4330,
+      "margin": 69.2
+    }
+  ]
+};
+</script>
+  <script>
+/* ============================================================
+   BIOBORO — трекер плана. Вся логика и расчёты.
+   Ванильный JS. Графики — Chart.js. Источник — data.json.
+   ============================================================ */
+
+'use strict';
+
+/* ---- Метрики: что показываем как «план vs факт» ---- */
+const METRICS = {
+  revenue_buyouts: { label: 'Выручка (выкупы)', field: 'revenue_buyouts', plan: 'revenue_buyouts', money: true },
+  revenue_orders:  { label: 'Выручка (заказы)', field: 'revenue_orders',  plan: 'revenue_orders',  money: true },
+  net_revenue:     { label: 'Чистая выручка',   field: 'net_revenue',     plan: 'net_revenue',     money: true },
+  orders_count:    { label: 'Заказы (шт)',       field: 'orders_count',    plan: 'orders_count',    money: false },
+  buyouts_count:   { label: 'Выкупы (шт)',       field: 'buyouts_count',   plan: 'buyouts_count',   money: false },
+};
+
+const MONTH_NAMES = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MONTH_GEN   = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+/* ---- Глобальное состояние ---- */
+const state = { db: null, month: null, channel: 'all', metric: 'revenue_buyouts', today: null };
+const charts = { cumulative: null, channels: null };
+
+/* ============================================================
+   Форматирование
+   ============================================================ */
+const RUB = new Intl.NumberFormat('ru-RU');
+function fmtMoney(v) { return RUB.format(Math.round(v)) + ' ₽'; }
+function fmtNum(v)   { return RUB.format(Math.round(v)); }
+function fmtVal(v, money) { return money ? fmtMoney(v) : fmtNum(v) + ' шт'; }
+function fmtPct(v, digits = 1) { return (v >= 0 ? '' : '') + v.toFixed(digits) + '%'; }
+function fmtSigned(v, money) { const s = v >= 0 ? '+' : '−'; return s + (money ? fmtMoney(Math.abs(v)) : fmtNum(Math.abs(v)) + ' шт'); }
+function fmtSignedPct(v) { return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '%'; }
+
+/* ============================================================
+   Утилиты по датам
+   ============================================================ */
+function daysInMonth(year, month1) { return new Date(year, month1, 0).getDate(); } // month1: 1..12
+function parseMonthKey(key) { const [y, m] = key.split('-').map(Number); return { y, m }; }
+function prevMonthKey(key) { let { y, m } = parseMonthKey(key); m -= 1; if (m === 0) { m = 12; y -= 1; } return `${y}-${String(m).padStart(2, '0')}`; }
+
+// «Текущий день» для месяца: для реального текущего месяца — сегодняшнее число,
+// для прошлого месяца — он завершён (= число дней), для будущего — 0.
+function currentDayFor(monthKey) {
+  const { y, m } = parseMonthKey(monthKey);
+  const dim = daysInMonth(y, m);
+  const ref = state.today || todayISO();   // выбранная «точка отсчёта»
+  const refKey = ref.slice(0, 7);
+  const refDay = Number(ref.slice(8, 10));
+  if (monthKey === refKey) return Math.min(refDay, dim);
+  if (monthKey < refKey) return dim;   // прошлый — завершён
+  return 0;                             // будущий
+}
+
+/* ============================================================
+   Агрегация: строки месяца -> массив по дням
+   Возвращает per-day суммы всех базовых полей.
+   ============================================================ */
+const BASE_FIELDS = ['revenue_orders','revenue_buyouts','orders_count','buyouts_count','ad_spend','logistics','commissions','penalties','other_costs','net_revenue'];
+
+function aggregateByDay(monthKey, channel) {
+  const { y, m } = parseMonthKey(monthKey);
+  const dim = daysInMonth(y, m);
+  const days = Array.from({ length: dim }, () => { const o = {}; BASE_FIELDS.forEach(f => o[f] = 0); o._has = false; return o; });
+  for (const r of state.db.data) {
+    if (!r.date.startsWith(monthKey)) continue;
+    if (channel !== 'all' && r.channel !== channel) continue;
+    const d = Number(r.date.slice(8, 10)) - 1;
+    if (d < 0 || d >= dim) continue;
+    BASE_FIELDS.forEach(f => days[d][f] += (r[f] || 0));
+    days[d]._has = true;
+  }
+  return { days, dim };
+}
+
+// Сумма выбранного поля по дням 1..upTo (включительно)
+function sumField(days, field, upTo) {
+  let s = 0;
+  for (let i = 0; i < upTo && i < days.length; i++) s += days[i][field];
+  return s;
+}
+
+/* ============================================================
+   Доля канала в плане.
+   Планы заданы на месяц целиком. Если выбран один канал — берём
+   его долю в плане пропорционально факту прошлого месяца (а если
+   данных нет — пропорционально его доле в текущем факте).
+   Для «Все каналы» доля = 1.
+   ============================================================ */
+function channelPlanShare(monthKey, channel, planField) {
+  if (channel === 'all') return 1;
+  const field = METRICS[state.metric].field;
+  function shareIn(mk) {
+    let total = 0, ch = 0;
+    for (const r of state.db.data) {
+      if (!r.date.startsWith(mk)) continue;
+      total += r[field] || 0;
+      if (r.channel === channel) ch += r[field] || 0;
+    }
+    return total > 0 ? ch / total : null;
+  }
+  return shareIn(prevMonthKey(monthKey)) ?? shareIn(monthKey) ?? (1 / state.db.meta.channels.length);
+}
+
+/* ============================================================
+   Главный расчёт по месяцу
+   ============================================================ */
+function compute(monthKey, channel, metricKey) {
+  const M = METRICS[metricKey];
+  const { days, dim } = aggregateByDay(monthKey, channel);
+  const curDay = currentDayFor(monthKey);
+
+  const plansRaw = state.db.plans[monthKey] || {};
+  const planShare = channelPlanShare(monthKey, channel, M.plan);
+  const monthlyPlan = (plansRaw[M.plan] || 0) * planShare;
+
+  // Формулы 1–7
+  const dailyPlan = dim > 0 ? monthlyPlan / dim : 0;                    // (1)
+  const cumPlanToday = dailyPlan * curDay;                             // (2)
+  const actualCum = sumField(days, M.field, curDay);                  // факт накопит.
+  const planCompletion = cumPlanToday > 0 ? actualCum / cumPlanToday * 100 : 0; // (3)
+  const monthCompletion = monthlyPlan > 0 ? actualCum / monthlyPlan * 100 : 0;  // (4)
+  const dailyAvgActual = curDay > 0 ? actualCum / curDay : 0;          // (5)
+  const forecast = dailyAvgActual * dim;                              // (6)
+  const forecastGap = forecast - monthlyPlan;                         // (7)
+
+  const deviationRub = actualCum - cumPlanToday;
+  const deviationPct = cumPlanToday > 0 ? deviationRub / cumPlanToday * 100 : 0;
+
+  // Дотянуть до плана прямо сейчас + нужный темп до конца месяца
+  const catchUp = Math.max(0, cumPlanToday - actualCum);
+  const remainingDays = Math.max(0, dim - curDay);
+  const requiredRunRate = remainingDays > 0 ? Math.max(0, (monthlyPlan - actualCum) / remainingDays) : 0;
+
+  // Доп. KPI накопительно за текущий период (всегда из базовых полей)
+  const cum = {};
+  BASE_FIELDS.forEach(f => cum[f] = sumField(days, f, curDay));
+  const avgOrderValue = cum.orders_count > 0 ? cum.revenue_orders / cum.orders_count : 0;   // (9)
+  const avgBuyoutValue = cum.buyouts_count > 0 ? cum.revenue_buyouts / cum.buyouts_count : 0; // (10)
+  const buyoutRate = cum.orders_count > 0 ? cum.buyouts_count / cum.orders_count * 100 : 0;   // (8)
+  const drr = cum.revenue_orders > 0 ? cum.ad_spend / cum.revenue_orders * 100 : 0;           // (11)
+
+  // Накопительные ряды для графика
+  const cumPlanSeries = [], cumFactSeries = [], dailyPlanSeries = [];
+  let accFact = 0;
+  for (let i = 0; i < dim; i++) {
+    dailyPlanSeries.push(dailyPlan);
+    cumPlanSeries.push(dailyPlan * (i + 1));
+    if (i < curDay) { accFact += days[i][M.field]; cumFactSeries.push(accFact); }
+    else cumFactSeries.push(null);
+  }
+  // Линия прогноза: от последней точки факта до прогноза в конце месяца
+  const forecastSeries = new Array(dim).fill(null);
+  if (curDay > 0 && curDay < dim) {
+    forecastSeries[curDay - 1] = actualCum;
+    forecastSeries[dim - 1] = forecast;
+  }
+
+  return {
+    M, dim, curDay, monthlyPlan, dailyPlan, cumPlanToday, actualCum,
+    planCompletion, monthCompletion, dailyAvgActual, forecast, forecastGap,
+    deviationRub, deviationPct, catchUp, remainingDays, requiredRunRate,
+    avgOrderValue, avgBuyoutValue, buyoutRate, drr, cum, days,
+    cumPlanSeries, cumFactSeries, dailyPlanSeries, forecastSeries,
+  };
+}
+
+/* Период день1..curDay для произвольного месяца (для сравнения МоМ) */
+function periodSum(monthKey, channel, curDay, field) {
+  const { days } = aggregateByDay(monthKey, channel);
+  return sumField(days, field, curDay);
+}
+
+/* ============================================================
+   Рендер
+   ============================================================ */
+function el(id) { return document.getElementById(id); }
+
+function render() {
+  const c = compute(state.month, state.channel, state.metric);
+  renderVerdict(c);
+  renderKPIs(c);
+  renderProgress(c);
+  renderBlocks(c);
+  renderCosts(c);
+  renderCompare(c);
+  renderTable(c);
+  renderCumulativeChart(c);
+  renderChannelChart(c);
+  syncToday();
+  renderPlanEditor();
+}
+
+function scopeLabel() {
+  const ch = state.channel === 'all' ? 'все каналы' : state.channel;
+  return `· ${state.month} · ${ch} · ${METRICS[state.metric].label.toLowerCase()}`;
+}
+
+function renderVerdict(c) {
+  const v = el('verdict');
+  const ahead = c.deviationRub >= 0;
+  v.classList.toggle('verdict--ahead', ahead);
+  v.classList.toggle('verdict--behind', !ahead);
+  el('verdict-arrow').textContent = ahead ? '↑' : '↓';
+  el('verdict-status').textContent = ahead ? 'Иду в план' : 'Отстаю от плана';
+
+  const detail = ahead
+    ? `Факт выше плана на ${fmtSignedPct(c.deviationPct).replace('+', '')} — опережение ${fmtMoney(Math.abs(c.deviationRub))} к ${c.curDay}-му числу.`
+    : `Факт ниже плана на ${Math.abs(c.deviationPct).toFixed(1)}% — отставание ${fmtMoney(Math.abs(c.deviationRub))} к ${c.curDay}-му числу.`;
+  el('verdict-detail').textContent = detail;
+
+  el('v-completion').textContent = fmtPct(c.planCompletion);
+  el('v-completion').className = 'vnum__value ' + (ahead ? 'pos' : 'neg');
+  el('v-catchup').textContent = c.catchUp > 0 ? fmtMoney(c.catchUp) : '0 ₽ — в плане';
+  el('v-runrate').textContent = fmtMoney(c.requiredRunRate) + '/день';
+}
+
+function kpiCard(label, value, foot, opts = {}) {
+  const cls = ['kpi']; if (opts.hero) cls.push('kpi--hero');
+  const valCls = 'kpi__value' + (opts.tone ? ' ' + opts.tone : '');
+  return `<div class="${cls.join(' ')}">
+    <div class="kpi__label">${label}</div>
+    <div class="${valCls}">${value}</div>
+    <div class="kpi__foot">${foot || ''}</div>
+  </div>`;
+}
+
+function renderKPIs(c) {
+  el('kpi-scope').textContent = scopeLabel();
+  const money = c.M.money;
+  const ahead = c.deviationRub >= 0;
+  const fc = c.forecastGap >= 0;
+
+  const cards = [
+    kpiCard('Выполнение плана', fmtPct(c.planCompletion),
+      `Факт ${fmtVal(c.actualCum, money)} из ${fmtVal(c.cumPlanToday, money)} к ${c.curDay}-му`,
+      { hero: true }),
+    kpiCard('План месяца', fmtVal(c.monthlyPlan, money), `${c.dim} дн · ${fmtVal(c.dailyPlan, money)}/день`),
+    kpiCard('Факт месяца (накопит.)', fmtVal(c.actualCum, money), `Прошло ${c.curDay} из ${c.dim} дней`),
+    kpiCard('План на сегодня (накопит.)', fmtVal(c.cumPlanToday, money), `${fmtVal(c.dailyPlan, money)} × ${c.curDay}`),
+    kpiCard('Факт на сегодня (накопит.)', fmtVal(c.actualCum, money), `Средний темп ${fmtVal(c.dailyAvgActual, money)}/день`),
+    kpiCard('Отклонение ₽', fmtSigned(c.deviationRub, money), 'Факт − план к сегодня',
+      { tone: ahead ? 'pos' : 'neg' }),
+    kpiCard('Отклонение %', fmtSignedPct(c.deviationPct), 'Относительно плана к сегодня',
+      { tone: ahead ? 'pos' : 'neg' }),
+    kpiCard('Прогноз на конец месяца', fmtVal(c.forecast, money),
+      `${fc ? 'Перевыполнение' : 'Недовыполнение'} ${fmtMoney(Math.abs(c.forecastGap))}`,
+      { tone: fc ? 'pos' : 'neg' }),
+    kpiCard('Заказы', fmtNum(c.cum.orders_count) + ' шт', `Средний чек ${fmtMoney(c.avgOrderValue)}`),
+    kpiCard('Выкупы', fmtNum(c.cum.buyouts_count) + ' шт', `Buyout rate ${c.buyoutRate.toFixed(1)}%`),
+    kpiCard('Средний чек', fmtMoney(c.avgOrderValue), `Чек выкупа ${fmtMoney(c.avgBuyoutValue)}`),
+    kpiCard('ДРР', c.drr.toFixed(1) + '%', `Реклама ${fmtMoney(c.cum.ad_spend)}`),
+    kpiCard('Чистая выручка', fmtMoney(c.cum.net_revenue),
+      `После рекламы, логистики и комиссий`),
+  ];
+  el('kpi-grid').innerHTML = cards.join('');
+}
+
+function renderProgress(c) {
+  const money = c.M.money;
+  el('progress-sub').textContent = `Факт ${fmtVal(c.actualCum, money)} из ${fmtVal(c.monthlyPlan, money)} · прогноз ${fmtVal(c.forecast, money)}`;
+  el('progress-pct').textContent = fmtPct(c.monthCompletion, 0);
+  el('progress-pct').className = 'progress-pct ' + (c.monthCompletion >= (c.curDay / c.dim * 100) ? 'pos' : 'neg');
+  el('bar-fill').style.width = Math.min(100, c.monthCompletion) + '%';
+  el('bar-plan').style.left = Math.min(100, c.curDay / c.dim * 100) + '%';
+}
+
+function statRow(label, value, tone) {
+  const t = tone ? ` ${tone}` : '';
+  return `<div class="stat"><span class="stat__label">${label}</span><span class="stat__value${t}">${value}</span></div>`;
+}
+
+function renderBlocks(c) {
+  const money = c.M.money;
+  const { y, m } = parseMonthKey(state.month);
+
+  // --- Сегодня ---
+  const todayIdx = c.curDay - 1;
+  const todayFact = c.curDay > 0 ? c.days[todayIdx][c.M.field] : 0;
+  const todayDev = todayFact - c.dailyPlan;
+  el('today-date').textContent = c.curDay > 0 ? `${c.curDay} ${MONTH_GEN[m - 1]}` : '—';
+  el('block-today').querySelector('.block__body').innerHTML =
+    statRow('План на день', fmtVal(c.dailyPlan, money)) +
+    statRow('Факт за день', fmtVal(todayFact, money)) +
+    statRow('Отклонение', fmtSigned(todayDev, money), todayDev >= 0 ? 'pos' : 'neg') +
+    statRow('Заказов сегодня', fmtNum(c.days[Math.max(0, todayIdx)]?.orders_count || 0) + ' шт');
+
+  // --- Неделя (Пн–Вс, в которую попадает текущий день) ---
+  const w = weekWindow(y, m, c.curDay, c.dim);
+  const weekPlan = c.dailyPlan * w.days;
+  const weekFactToDate = sumRange(c.days, c.M.field, w.start, Math.min(w.endToDate, c.curDay));
+  const weekPlanToDate = c.dailyPlan * Math.max(0, Math.min(w.endToDate, c.curDay) - w.start + 1);
+  const weekDev = weekFactToDate - weekPlanToDate;
+  el('week-range').textContent = `${w.start}–${w.end} ${MONTH_GEN[m - 1]}`;
+  el('block-week').querySelector('.block__body').innerHTML =
+    statRow('План недели (полной)', fmtVal(weekPlan, money)) +
+    statRow('План к текущему дню', fmtVal(weekPlanToDate, money)) +
+    statRow('Факт недели', fmtVal(weekFactToDate, money)) +
+    statRow('Отклонение', fmtSigned(weekDev, money), weekDev >= 0 ? 'pos' : 'neg');
+
+  // --- Месяц ---
+  el('month-name').textContent = `${MONTH_NAMES[m - 1]} ${y}`;
+  el('block-month').querySelector('.block__body').innerHTML =
+    statRow('План месяца', fmtVal(c.monthlyPlan, money)) +
+    statRow('Факт (накопит.)', fmtVal(c.actualCum, money)) +
+    statRow('Выполнение', fmtPct(c.monthCompletion), c.deviationRub >= 0 ? 'pos' : 'neg') +
+    statRow('Прогноз', fmtVal(c.forecast, money), c.forecastGap >= 0 ? 'pos' : 'neg');
+}
+
+// окно недели Пн–Вс внутри месяца
+function weekWindow(y, m, curDay, dim) {
+  const day = Math.max(1, curDay);
+  const dow = (new Date(y, m - 1, day).getDay() + 6) % 7; // 0=Пн
+  const start = Math.max(1, day - dow);
+  const end = Math.min(dim, start + 6);
+  return { start, end, days: end - start + 1, endToDate: end };
+}
+function sumRange(days, field, from1, to1) {
+  let s = 0;
+  for (let i = from1 - 1; i <= to1 - 1 && i < days.length; i++) if (i >= 0) s += days[i][field];
+  return s;
+}
+
+/* --- Структура расходов и прибыли (за период 1..curDay) --- */
+function renderCosts(c) {
+  const rb = c.cum.revenue_buyouts || 0;
+  const net = c.cum.net_revenue || 0;
+  const pct = v => rb > 0 ? (v / rb * 100).toFixed(1) + '%' : '—';
+  const line = (label, val, share, tone) =>
+    `<div class="stat"><span class="stat__label">${label}</span>` +
+    `<span class="stat__value${tone ? ' ' + tone : ''}">${fmtMoney(val)} ` +
+    `<span class="muted-inline">${share}</span></span></div>`;
+
+  el('cost-sub').textContent =
+    `За период 1–${c.curDay} · ${state.channel === 'all' ? 'все каналы' : state.channel}`;
+  el('cost-body').innerHTML =
+    line('Выручка по выкупам', rb, '100%') +
+    line('− Реклама (ДРР)', c.cum.ad_spend, pct(c.cum.ad_spend), 'neg') +
+    line('− Логистика', c.cum.logistics, pct(c.cum.logistics), 'neg') +
+    line('− Комиссии маркетплейсов', c.cum.commissions, pct(c.cum.commissions), 'neg') +
+    line('− Штрафы', c.cum.penalties, pct(c.cum.penalties), 'neg') +
+    line('− Прочие расходы', c.cum.other_costs, pct(c.cum.other_costs), 'neg') +
+    line('= Чистая выручка', net, 'маржа ' + (rb > 0 ? (net / rb * 100).toFixed(1) : '0') + '%',
+         net >= 0 ? 'pos' : 'neg');
+}
+
+/* --- Сравнение месяц к месяцу (день 1..curDay этого vs прошлого месяца) --- */
+function renderCompare(c) {
+  const prev = prevMonthKey(state.month);
+  el('compare-scope').textContent = `· ${state.month} vs ${prev}`;
+  const ch = state.channel;
+
+  const hasPrev = state.db.data.some(r => r.date.startsWith(prev));
+  if (!hasPrev) {
+    el('compare-sub').textContent = `Нет данных за ${prev} для сравнения.`;
+    el('compare-grid').innerHTML = '';
+    return;
+  }
+  el('compare-sub').textContent = `Дни 1–${c.curDay} ${parseMonthKey(state.month).y} vs дни 1–${c.curDay} прошлого месяца.`;
+
+  const items = [
+    { key: 'orders_count', label: 'Заказы', money: false },
+    { key: 'buyouts_count', label: 'Выкупы', money: false },
+    { key: 'revenue_buyouts', label: 'Выручка (выкупы)', money: true },
+    { key: 'net_revenue', label: 'Чистая выручка', money: true },
+  ];
+  el('compare-grid').innerHTML = items.map(it => {
+    const now = periodSum(state.month, ch, c.curDay, it.key);
+    const was = periodSum(prev, ch, c.curDay, it.key);
+    const delta = now - was;
+    const pct = was > 0 ? delta / was * 100 : 0;
+    const up = delta >= 0;
+    return `<div class="cmp">
+      <div class="cmp__label">${it.label}</div>
+      <div class="cmp__now">${fmtVal(now, it.money)}</div>
+      <div class="cmp__prev">прошлый месяц: ${fmtVal(was, it.money)}</div>
+      <div class="cmp__delta ${up ? 'pos' : 'neg'}">${up ? '▲' : '▼'} ${fmtSigned(delta, it.money)} (${fmtSignedPct(pct)})</div>
+    </div>`;
+  }).join('');
+}
+
+/* --- Таблица по дням --- */
+function renderTable(c) {
+  const money = c.M.money;
+  const tbody = el('day-table').querySelector('tbody');
+  const { m } = parseMonthKey(state.month);
+  let cumPlan = 0, cumFact = 0, rows = '';
+  for (let i = 0; i < c.dim; i++) {
+    const dayNo = i + 1;
+    cumPlan += c.dailyPlan;
+    const isPast = dayNo <= c.curDay;
+    const dailyFact = isPast ? c.days[i][c.M.field] : null;
+    if (isPast) cumFact += c.days[i][c.M.field];
+    const dev = isPast ? (cumFact - cumPlan) : null;
+    const pct = isPast && cumPlan > 0 ? cumFact / cumPlan * 100 : null;
+
+    let rowCls = 'future', statusHtml = '<span class="tag-status s-future">впереди</span>';
+    if (isPast) {
+      const ahead = dev >= 0;
+      rowCls = ahead ? 'ahead' : 'behind';
+      statusHtml = `<span class="tag-status ${ahead ? 's-ahead' : 's-behind'}">${ahead ? '↑ в плане' : '↓ отставание'}</span>`;
+    }
+    if (dayNo === c.curDay) rowCls += ' is-today';
+
+    rows += `<tr class="${rowCls}">
+      <td>${dayNo}</td>
+      <td class="num">${money ? fmtNum(c.dailyPlan) : c.dailyPlan.toFixed(0)}</td>
+      <td class="num">${isPast ? fmtNum(dailyFact) : '—'}</td>
+      <td class="num">${fmtNum(cumPlan)}</td>
+      <td class="num">${isPast ? fmtNum(cumFact) : '—'}</td>
+      <td class="num ${isPast ? (dev >= 0 ? 'pos' : 'neg') : ''}">${isPast ? fmtSigned(dev, false) : '—'}</td>
+      <td class="num">${isPast ? pct.toFixed(0) + '%' : '—'}</td>
+      <td>${statusHtml}</td>
+    </tr>`;
+  }
+  tbody.innerHTML = rows;
+}
+
+/* ============================================================
+   Графики (Chart.js)
+   ============================================================ */
+const CSSV = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function renderCumulativeChart(c) {
+  const ctx = el('chart-cumulative').getContext('2d');
+  const labels = Array.from({ length: c.dim }, (_, i) => i + 1);
+  const money = c.M.money;
+  el('chart1-sub').textContent = `${state.month} · ${state.channel === 'all' ? 'все каналы' : state.channel} · ${c.M.label.toLowerCase()}`;
+
+  if (charts.cumulative) charts.cumulative.destroy();
+  charts.cumulative = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'План накопит.', data: c.cumPlanSeries, borderColor: CSSV('--faint'), borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, tension: 0, fill: false },
+        { label: 'Факт накопит.', data: c.cumFactSeries, borderColor: CSSV('--brand'), backgroundColor: 'rgba(15,169,104,.10)', borderWidth: 2.5, pointRadius: 0, tension: .15, fill: true, spanGaps: false },
+        { label: 'Прогноз', data: c.forecastSeries, borderColor: CSSV('--brand-l'), borderDash: [3, 3], borderWidth: 1.5, pointRadius: 0, tension: 0, fill: false, spanGaps: true },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { labels: { boxWidth: 12, boxHeight: 12, usePointStyle: true, color: CSSV('--muted'), font: { family: 'Inter' } } },
+        tooltip: {
+          callbacks: {
+            title: (it) => `День ${it[0].label}`,
+            label: (it) => `${it.dataset.label}: ${it.parsed.y == null ? '—' : (money ? fmtMoney(it.parsed.y) : fmtNum(it.parsed.y) + ' шт')}`,
+          },
+        },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: CSSV('--faint'), maxRotation: 0, autoSkipPadding: 14 } },
+        y: { grid: { color: CSSV('--line') }, ticks: { color: CSSV('--faint'), callback: (v) => money ? compactRub(v) : fmtNum(v) } },
+      },
+    },
+  });
+}
+
+function compactRub(v) {
+  if (Math.abs(v) >= 1e6) return (v / 1e6).toFixed(1).replace('.0', '') + ' млн';
+  if (Math.abs(v) >= 1e3) return (v / 1e3).toFixed(0) + ' тыс';
+  return fmtNum(v);
+}
+
+function renderChannelChart(c) {
+  const ctx = el('chart-channels').getContext('2d');
+  const field = c.M.field, money = c.M.money;
+  const prev = prevMonthKey(state.month);
+  const channels = state.db.meta.channels;
+
+  const now = channels.map(ch => periodSum(state.month, ch, c.curDay, field));
+  const was = channels.map(ch => periodSum(prev, ch, c.curDay, field));
+  // подсветка проседающих каналов (факт ниже прошлого месяца)
+  const colors = channels.map((_, i) => (now[i] < was[i] ? CSSV('--neg') : CSSV('--brand')));
+
+  if (charts.channels) charts.channels.destroy();
+  charts.channels = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: channels,
+      datasets: [
+        { label: 'Текущий период', data: now, backgroundColor: colors, borderRadius: 5, barPercentage: .9, categoryPercentage: .65 },
+        { label: 'Прошлый месяц', data: was, backgroundColor: CSSV('--line'), borderRadius: 5, barPercentage: .9, categoryPercentage: .65 },
+      ],
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { boxWidth: 12, boxHeight: 12, color: CSSV('--muted'), font: { family: 'Inter' } } },
+        tooltip: {
+          callbacks: {
+            label: (it) => {
+              const i = it.dataIndex, delta = now[i] - was[i];
+              const base = `${it.dataset.label}: ${money ? fmtMoney(it.parsed.x) : fmtNum(it.parsed.x) + ' шт'}`;
+              if (it.datasetIndex === 0) return [base, `Δ к прошлому: ${fmtSigned(delta, money)}`];
+              return base;
+            },
+          },
+        },
+      },
+      scales: {
+        x: { grid: { color: CSSV('--line') }, ticks: { color: CSSV('--faint'), callback: (v) => money ? compactRub(v) : fmtNum(v) } },
+        y: { grid: { display: false }, ticks: { color: CSSV('--ink'), font: { family: 'Inter', weight: '500' } } },
+      },
+    },
+  });
+}
+
+/* ============================================================
+   Фильтры и инициализация
+   ============================================================ */
+function todayISO() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+}
+function formatRu(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${d} ${MONTH_GEN[m - 1]} ${y}`;
+}
+// Диапазон дат, на которые есть данные (для ограничения календаря)
+function dataDateRange() {
+  const ds = state.db.data.map(r => r.date).sort();
+  return { min: ds[0], max: ds[ds.length - 1] };
+}
+// Синхронизировать поле-календарь с выбранной датой
+function syncToday() {
+  const inp = el('today-input');
+  if (inp) inp.value = state.today;
+  const lab = el('today-human');
+  if (lab) lab.textContent = formatRu(state.today);
+}
+
+/* ---- Планы: ручное редактирование + сохранение в браузере ----
+   Правки применяются сразу. localStorage работает в скачанном файле и на
+   хостинге; в предпросмотре чата может быть недоступен — тогда правки
+   действуют до перезагрузки (обёрнуто в try/catch). ---- */
+const PLAN_KEY = 'bioboro_plan_overrides_v1';
+function loadPlanOverrides() {
+  try { return JSON.parse(localStorage.getItem(PLAN_KEY)) || {}; } catch (e) { return {}; }
+}
+function savePlanOverrides(obj) {
+  try { localStorage.setItem(PLAN_KEY, JSON.stringify(obj)); } catch (e) { /* нет доступа — ок */ }
+}
+function applyPlanOverrides() {
+  const ov = loadPlanOverrides();
+  for (const mk of Object.keys(ov)) {
+    state.db.plans[mk] = Object.assign({}, state.db.plans[mk] || {}, ov[mk]);
+  }
+}
+function setPlanValue(monthKey, metricKey, value) {
+  if (!state.db.plans[monthKey]) state.db.plans[monthKey] = {};
+  state.db.plans[monthKey][metricKey] = value;
+  const ov = loadPlanOverrides();
+  ov[monthKey] = Object.assign({}, ov[monthKey], { [metricKey]: value });
+  savePlanOverrides(ov);
+}
+
+// Порядок и подписи метрик в редакторе плана (деньги — сверху, чистая выручка выделена)
+const PLAN_ORDER = [
+  ['net_revenue', 'Чистая выручка', '₽', true],
+  ['revenue_buyouts', 'Выручка (выкупы)', '₽', false],
+  ['revenue_orders', 'Выручка (заказы)', '₽', false],
+  ['orders_count', 'Заказы', 'шт', false],
+  ['buyouts_count', 'Выкупы', 'шт', false],
+];
+
+function renderPlanEditor() {
+  const host = el('plan-cells');
+  if (!host) return;
+  const plans = state.db.plans[state.month] || {};
+  el('plan-month').textContent = monthTitle(state.month);
+  host.innerHTML = PLAN_ORDER.map(([key, label, unit, hero]) => `
+    <label class="plan-cell${hero ? ' plan-cell--hero' : ''}">
+      <span class="plan-cell__label">${label}<span class="plan-cell__unit">${unit}</span></span>
+      <input class="plan-input" type="number" inputmode="numeric" min="0" step="1000"
+             data-metric="${key}" value="${plans[key] != null ? plans[key] : ''}"
+             placeholder="0">
+    </label>`).join('');
+
+  host.querySelectorAll('.plan-input').forEach(inp => {
+    inp.addEventListener('change', e => {
+      const v = Math.max(0, Math.round(Number(e.target.value) || 0));
+      e.target.value = v;
+      setPlanValue(state.month, e.target.dataset.metric, v);
+      render();
+    });
+  });
+}
+
+function monthTitle(mk) { const { y, m } = parseMonthKey(mk); return `${MONTH_NAMES[m - 1]} ${y}`; }
+
+function buildFilters() {
+  const months = Object.keys(state.db.plans).sort().reverse();
+  const fm = el('f-month');
+  fm.innerHTML = months.map(mk => {
+    const { y, m } = parseMonthKey(mk);
+    return `<option value="${mk}">${MONTH_NAMES[m - 1]} ${y}</option>`;
+  }).join('');
+  fm.value = state.month;
+
+  const fc = el('f-channel');
+  fc.innerHTML = `<option value="all">Все каналы</option>` +
+    state.db.meta.channels.map(ch => `<option value="${ch}">${ch}</option>`).join('');
+  fc.value = state.channel;
+
+  const fme = el('f-metric');
+  fme.innerHTML = Object.entries(METRICS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+  fme.value = state.metric;
+
+  fm.addEventListener('change', e => { state.month = e.target.value; render(); });
+  fc.addEventListener('change', e => { state.channel = e.target.value; render(); });
+  fme.addEventListener('change', e => { state.metric = e.target.value; render(); });
+
+  // Календарь: выбор «точки отсчёта» (что считать «сегодня»)
+  const di = el('today-input');
+  if (di) {
+    const { min, max } = dataDateRange();
+    di.min = min; di.max = max; di.value = state.today;
+    di.addEventListener('change', e => {
+      let v = e.target.value || state.today;
+      if (v < min) v = min; if (v > max) v = max;
+      state.today = v;
+      const mk = v.slice(0, 7);
+      if (months.includes(mk)) { state.month = mk; fm.value = mk; }  // показать месяц выбранной даты
+      render();
+    });
+  }
+
+  // Сброс ручных правок плана к значениям из data.json
+  const pr = el('plan-reset');
+  if (pr) pr.addEventListener('click', () => {
+    try { localStorage.removeItem(PLAN_KEY); } catch (e) {}
+    state.db = null;            // перезагрузим исходные планы
+    init();
+  });
+}
+
+/* ============================================================
+   Источник данных — переключаемый.
+   SOURCE.type: 'json' | 'github' | 'gsheets'
+     'json'    — локальный data.json рядом с index.html (по умолчанию)
+     'github'  — raw-ссылка на data.json в репозитории GitHub
+     'gsheets' — опубликованный из Google Sheets CSV (лист с дневными строками;
+                 meta/plans берутся из DEFAULT_CONFIG ниже)
+   Подробности и примеры — в README.md.
+   ============================================================ */
+const SOURCE = {
+  type: 'json',
+  jsonUrl: 'data.json',
+  githubRawUrl: 'https://raw.githubusercontent.com/USER/REPO/main/data.json',
+  gsheetsCsvUrl: 'https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=0',
+};
+
+// Конфиг (meta + plans) для источника gsheets, где лист содержит только дневные строки.
+const DEFAULT_CONFIG = {
+  meta: {
+    business: 'BIOBORO', currency: 'RUB', default_month: '2026-06',
+    default_metric: 'revenue_buyouts',
+    channels: ['Wildberries', 'Ozon', 'Site', 'Clinics', 'VK', 'YouTube'],
+  },
+  plans: {
+    '2026-06': { revenue_buyouts: 10000000, revenue_orders: 12500000, orders_count: 7353, buyouts_count: 5882, net_revenue: 4200000 },
+    '2026-05': { revenue_buyouts: 9000000,  revenue_orders: 11250000, orders_count: 6618, buyouts_count: 5294, net_revenue: 3780000 },
+  },
+};
+
+const CSV_NUMERIC = ['revenue_orders','revenue_buyouts','orders_count','buyouts_count','ad_spend','logistics','commissions','penalties','other_costs','net_revenue','margin'];
+
+// Простой CSV-парсер (поддерживает кавычки и запятые внутри значений)
+function parseCsv(text) {
+  const rows = []; let row = [], val = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch === '"' && text[i + 1] === '"') { val += '"'; i++; }
+      else if (ch === '"') q = false;
+      else val += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === ',') { row.push(val); val = ''; }
+    else if (ch === '\n') { row.push(val); rows.push(row); row = []; val = ''; }
+    else if (ch === '\r') { /* skip */ }
+    else val += ch;
+  }
+  if (val.length || row.length) { row.push(val); rows.push(row); }
+  return rows.filter(r => r.length && r.some(c => c.trim() !== ''));
+}
+
+// CSV -> { meta, plans, data } по схеме дашборда (meta/plans берём из DEFAULT_CONFIG)
+function csvToDataset(text) {
+  const rows = parseCsv(text);
+  const header = rows.shift().map(h => h.trim());
+  const idx = Object.fromEntries(header.map((h, i) => [h, i]));
+  const data = rows.map(r => {
+    const o = { date: (r[idx.date] || '').trim(), channel: (r[idx.channel] || '').trim() };
+    for (const f of CSV_NUMERIC) o[f] = Number((r[idx[f]] ?? '0').toString().replace(/\s/g, '').replace(',', '.')) || 0;
+    return o;
+  }).filter(o => o.date && o.channel);
+  return { meta: DEFAULT_CONFIG.meta, plans: DEFAULT_CONFIG.plans, data };
+}
+
+async function loadData() {
+  // 0) встроенные данные (предпросмотр одним файлом) — имеют приоритет
+  if (window.BIOBORO_DATA) return window.BIOBORO_DATA;
+  // 1) Google Sheets (CSV)
+  if (SOURCE.type === 'gsheets') {
+    const res = await fetch(SOURCE.gsheetsCsvUrl);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return csvToDataset(await res.text());
+  }
+  // 2) GitHub raw JSON или 3) локальный data.json
+  const url = SOURCE.type === 'github' ? SOURCE.githubRawUrl : SOURCE.jsonUrl;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+async function init() {
+  try {
+    state.db = await loadData();
+    applyPlanOverrides();   // ручные правки плана из браузера поверх data.json
+    state.month = state.db.meta.default_month || Object.keys(state.db.plans).sort().reverse()[0];
+    state.metric = state.db.meta.default_metric || 'revenue_buyouts';
+    // «Сегодня» по умолчанию: meta.today → meta.generated_at → системная дата,
+    // но не выходя за пределы дат, на которые есть данные.
+    const range = dataDateRange();
+    let t = state.today || state.db.meta.today || state.db.meta.generated_at || todayISO();
+    if (t < range.min) t = range.min; if (t > range.max) t = range.max;
+    state.today = t;
+    buildFilters();
+    render();
+  } catch (err) {
+    document.querySelector('.app').insertAdjacentHTML('afterbegin',
+      `<div class="card" style="border-color:var(--neg);color:var(--neg);margin-bottom:14px">
+        Не удалось загрузить <code>data.json</code> (${String(err.message || err)}).
+        Откройте проект через локальный сервер: <code>python3 -m http.server</code> и зайдите на
+        <code>http://localhost:8000</code>. Браузеры блокируют чтение локальных файлов напрямую через file://.
+      </div>`);
+    console.error(err);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+</script>
+</body>
+</html>
