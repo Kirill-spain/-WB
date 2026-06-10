@@ -16,11 +16,11 @@
   },
   "plans": {
     "2026-05": {
-      "revenue_buyouts": 9000000,
-      "revenue_orders": 11250000,
-      "orders_count": 6618,
-      "buyouts_count": 5294,
-      "net_revenue": 3780000
+      "revenue_buyouts": 4000000,
+      "revenue_orders": 3800000,
+      "orders_count": 500,
+      "buyouts_count": 450,
+      "net_revenue": 2500000
     },
     "2026-06": {
       "revenue_buyouts": 10000000,
