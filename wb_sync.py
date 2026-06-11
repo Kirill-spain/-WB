@@ -48,14 +48,28 @@ def http_get(path, date_from):
     req = urllib.request.Request(f"{BASE}{path}?{qs}",
                                  headers={"Authorization": TOKEN,
                                           "Accept": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=120) as r:
-            return json.loads(r.read().decode("utf-8") or "[]")
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", "ignore")[:300]
-        raise SystemExit(f"WB API {path} → HTTP {e.code}: {body}")
-    except urllib.error.URLError as e:
-        raise SystemExit(f"WB API {path} → сетевая ошибка: {e.reason}")
+    attempts = int(os.environ.get("WB_RETRIES", "5"))
+    for i in range(attempts):
+        try:
+            with urllib.request.urlopen(req, timeout=120) as r:
+                return json.loads(r.read().decode("utf-8") or "[]")
+        except urllib.error.HTTPError as e:
+            # 429 — лимит WB (≈1 запрос/мин). Ждём и повторяем, не падая.
+            if e.code == 429 and i < attempts - 1:
+                wait = REQUEST_INTERVAL
+                print(f"WB API {path}: HTTP 429 (лимит), пауза {wait:.0f}с и повтор "
+                      f"({i + 1}/{attempts - 1})…")
+                time.sleep(wait)
+                continue
+            body = e.read().decode("utf-8", "ignore")[:300]
+            raise SystemExit(f"WB API {path} → HTTP {e.code}: {body}")
+        except urllib.error.URLError as e:
+            # сетевой сбой — короткая пауза и повтор
+            if i < attempts - 1:
+                print(f"WB API {path}: сетевая ошибка ({e.reason}), повтор…")
+                time.sleep(5)
+                continue
+            raise SystemExit(f"WB API {path} → сетевая ошибка: {e.reason}")
 
 
 def fetch_all(path, start_iso):
