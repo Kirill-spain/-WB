@@ -97,8 +97,7 @@ def aggregate(orders, sales, window_start, window_end):
         day = (o.get("date") or "")[:10]
         if day not in days:
             continue
-        if o.get("isCancel"):
-            continue
+        # Учитываем все заказы — как «Заказано» в кабинете WB (включая отменённые).
         days[day]["orders_count"] += 1
         days[day]["revenue_orders"] += float(o.get("priceWithDisc") or 0)
 
@@ -154,6 +153,12 @@ def merge(dataset, new_rows, window_start, window_end):
     if CHANNEL not in chans:
         chans.append(CHANNEL)
     meta["last_wb_sync"] = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    # Режим «только Wildberries»: убрать демо-строки прочих каналов, чтобы в дашборде
+    # были исключительно реальные данные WB. Когда подключите Ozon и др. — задайте
+    # переменную окружения BIOBORO_WB_ONLY=0.
+    if os.environ.get("BIOBORO_WB_ONLY", "1") == "1":
+        dataset["data"] = [r for r in dataset["data"] if r.get("channel") == CHANNEL]
+        meta["channels"] = [CHANNEL]
     return dataset
 
 
@@ -161,7 +166,9 @@ def main():
     if not TOKEN:
         raise SystemExit("Не задан WB_STATS_TOKEN (добавьте секрет в настройках репозитория).")
 
-    today = dt.date.today()
+    # «Сегодня» по московскому времени (данные WB — в МСК), а раннер GitHub живёт
+    # по UTC; иначе текущий день может не попасть в окно.
+    today = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=3)).date()
     first_this = today.replace(day=1)
     window_start = (first_this - dt.timedelta(days=1)).replace(day=1)  # 1-е число прошлого месяца
     window_end = today
