@@ -8,7 +8,7 @@
     "channels": [
       "Wildberries"
     ],
-    "last_wb_sync": "2026-06-12T12:41:49+00:00"
+    "last_wb_sync": "2026-06-12T23:04:32+00:00"
   },
   "plans": {
     "2026-05": {
@@ -660,17 +660,32 @@
     {
       "date": "2026-06-12",
       "channel": "Wildberries",
-      "revenue_orders": 27462,
-      "revenue_buyouts": 56651,
-      "orders_count": 2,
-      "buyouts_count": 6,
+      "revenue_orders": 87629,
+      "revenue_buyouts": 76574,
+      "orders_count": 7,
+      "buyouts_count": 8,
       "ad_spend": 0,
       "logistics": 0,
-      "commissions": 13879,
+      "commissions": 18761,
       "penalties": 0,
       "other_costs": 0,
-      "net_revenue": 42772,
+      "net_revenue": 57813,
       "margin": 75.5
+    },
+    {
+      "date": "2026-06-13",
+      "channel": "Wildberries",
+      "revenue_orders": 0,
+      "revenue_buyouts": 0,
+      "orders_count": 0,
+      "buyouts_count": 0,
+      "ad_spend": 0,
+      "logistics": 0,
+      "commissions": 0,
+      "penalties": 0,
+      "other_costs": 0,
+      "net_revenue": 0,
+      "margin": 0
     }
   ]
 }
